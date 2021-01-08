@@ -61,6 +61,7 @@ public class Server {
 
     private static void addRoom(Room room) {
         rooms.put(createRoomName(room), room);
+        roomAmount++;
     }
 
     private static String createRoomName(Room room) {
