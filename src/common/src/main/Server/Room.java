@@ -1,43 +1,43 @@
-package common.src.main;
+package common.src.main.Server;
 
+import common.src.main.Enum.RoomMessage;
 import org.jspace.*;
 
 import java.util.HashMap;
-import common.src.main.Enum.initialMessages;
 
-public class Server {
+public class Room implements Runnable {
+    protected SpaceRepository repo;
+    protected Space chat;
 
     protected String currentWord; //The word which is being drawn
     protected static int playerAmount = 0;
     protected static HashMap<Integer,Space> playerInboxes;
-    protected SpaceRepository repo;
 
-    public static void main(String[] args) {
 
+    public Room(SpaceRepository repo) {
+        this.repo = repo;
+    }
+
+    @Override
+    public void run() {
         try {
-            // Create a repository
-            SpaceRepository repository = new SpaceRepository();
-
             // Create a local space for the chat messages
             SequentialSpace chat = new PileSpace();
 
             // Add the space to the repository
-            repository.add("chat", chat);
+            repo.add("chat", chat);
 
-            String gateUri = "tcp://localhost:9001/?keep";
-            System.out.println("Opening repository gate at " + gateUri + "...");
-            repository.addGate(gateUri);
-
-            //Waiting on game to start
+            // Waiting on game to start
             Template initialMessageTemplate = new Template (new FormalField(String.class),
-                                                            new FormalField(initialMessages.class));  //Get name,enum
+                    new FormalField(RoomMessage.class));  //Get name,enum
 
+            // We initially use chat to start game.
             while (true) {
                 //Object[] message = chat.get(initialMessageTemplate) //TODO: why does this not work??
-                Object[] message = chat.get(new FormalField(String.class), new FormalField(initialMessages.class));
-                if (message[1].equals(initialMessages.NEWPLAYER)) {
-                    addplayer(message[0].toString(),repository); //add player and generate their inbox
-                } else if (message[1].equals(initialMessages.STARTGAME)) {
+                Object[] message = chat.get(new FormalField(String.class), new FormalField(RoomMessage.class));
+                if (message[1].equals(RoomMessage.NEWPLAYER)) {
+                    addplayer(message[0].toString(),repo); //add player and generate their inbox
+                } else if (message[1].equals(RoomMessage.STARTGAME)) {
                     break;
                 }
             }
@@ -51,8 +51,6 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private static void addplayer(String name, SpaceRepository repo) {
@@ -68,10 +66,15 @@ public class Server {
     }
 
     private static String createName(String name) {
-        return name + "-" + "playerAmount";
+        return name + "-" + playerAmount;
+    }
+
+    public Space getChat() {
+        return chat;
     }
 }
 
+// A thread for sending messages to inboxes (Not sure if needed).
 class sendMesseges implements Runnable {
     Space userInbox;
 
