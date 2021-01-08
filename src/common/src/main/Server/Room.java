@@ -1,5 +1,6 @@
 package common.src.main.Server;
 
+import common.src.main.Enum.InitialMessage;
 import common.src.main.Enum.RoomMessage;
 import org.jspace.*;
 
@@ -7,15 +8,19 @@ import java.util.HashMap;
 
 public class Room implements Runnable {
     protected SpaceRepository repo;
+    protected Space serverSpace;
     protected Space chat;
 
+    protected String roomName;
     protected String currentWord; //The word which is being drawn
     protected static int playerAmount = 0;
     protected static HashMap<Integer,Space> playerInboxes;
 
 
-    public Room(SpaceRepository repo) {
+    public Room(SpaceRepository repo,String roomName,Space serverSpace) {
         this.repo = repo;
+        this.roomName = roomName;
+        this.serverSpace = serverSpace;
     }
 
     @Override
@@ -25,7 +30,9 @@ public class Room implements Runnable {
             SequentialSpace chat = new PileSpace();
 
             // Add the space to the repository
-            repo.add("chat", chat);
+            repo.add(roomName, chat);
+            serverSpace.put(roomName,InitialMessage.ROOMOK);
+            System.out.println("Room added: " + roomName);
 
             // Waiting on game to start
             Template initialMessageTemplate = new Template (new FormalField(String.class),

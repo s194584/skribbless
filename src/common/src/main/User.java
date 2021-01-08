@@ -1,18 +1,22 @@
 package common.src.main;
 
+import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.UnknownHostException;
 import common.src.main.Enum.*;
 import org.jspace.Space;
 
 public class User {
     protected static String name;
-    protected int id;
+    protected static int userID;
+    protected static String roomName;
+    protected static String hostPort;
     protected int score;
     protected boolean isturn;
 
@@ -30,8 +34,12 @@ public class User {
             while (true) { //TODO: This must be done through UI
                 System.out.print("Enter the server ip in the form host:gate");
                 uri = input.readLine();
+                hostPort = uri;
+                uri = makeUri("serverSpace");
                 uri = "tcp://" + uri + "/serverSpace?keep";
                 uri = "tcp://localhost:9001/serverSpace?keep"; //TODO: remove this
+                hostPort = "localhost:9001";
+
                 try {
 
                     serverSpace = new RemoteSpace(uri);
@@ -40,6 +48,12 @@ public class User {
                     System.out.println("Can't find server");
                 }
             }
+
+            // request and get id from server
+            serverSpace.put(InitialMessage.CONNECTED,"");
+            userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
+            System.out.println("myID: " + userID);
+
 
             // Read user name from the console
             System.out.print("Enter your name: "); //TODO: This must be done through UI
@@ -51,33 +65,35 @@ public class User {
                 String choice = input.readLine();
                 try {
                     InitialMessage initialMessage;
-                    if (choice.equals("HOST")) {
-                        initialMessage = InitialMessage.JOIN;
-                        serverSpace.put(choice,initialMessage);
-                    }
-                    else {
-                        initialMessage = InitialMessage.HOST;
-                        serverSpace.put(name,initialMessage);
+                    if (!choice.equals("HOST")) {
+                            initialMessage = InitialMessage.JOIN;
+                            serverSpace.put(userID,choice,initialMessage);
+                        }
+                        else {
+                            initialMessage = InitialMessage.HOST;
+                            serverSpace.put(userID,"",initialMessage);
                     }
 
 
                     //get the response from the server
-                    Object[] response = serverSpace.get(new FormalField(InitialMessage.class));
-                    if (response[0].equals(InitialMessage.OK)) {
-                        Object[] Objectchat = serverSpace.get(new FormalField(Space.class));
-                        chat = (Space) Objectchat[0];
-                    } else {
+                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(InitialMessage.class),new FormalField(String.class));
+                    if (response[1].equals(InitialMessage.OK)) {
+                        roomName = response[2].toString();
 
+                        // get ok from creationHandler
+                        serverSpace.get(new ActualField(userID),new ActualField(InitialMessage.OK));
+                        System.out.println(makeUri(roomName));
+                        chat = new RemoteSpace(makeUri(roomName));
+                        break;
+                    } else {
+                        System.out.println("Room not found");
                     }
-                    break;
                 } catch (Exception e) {
-                    System.out.println("Not a recognized command");
+                    e.printStackTrace();
                 }
             }
 
-
-
-
+            // In the game:
 
             //TODO: Start a new thread that handel incomming messages.
 
@@ -95,6 +111,10 @@ public class User {
             e.printStackTrace();
         }
 
+    }
+
+    private static String makeUri(String identifier) {
+        return "tcp://" + hostPort + "/" + identifier + "?keep";
     }
 
 }
