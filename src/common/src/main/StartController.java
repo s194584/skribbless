@@ -1,70 +1,115 @@
 package common.src.main;
 
+import common.src.main.Client.UserTask;
+import common.src.main.Enum.UiFlag;
 import javafx.application.Platform;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import org.jspace.FormalField;
+import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
+
+
 public class StartController {
-    private Space space;
-    static int update = 0;
     @FXML
-    private Label label;
+    Button enterServerButton;
+    @FXML
+    private TextField ipTextField;
+    @FXML
+    private TextField nameTextField;
+    @FXML
+    private TextField roomNameTextField;
+    @FXML
+    Label label1;
+    Space ui;
 
-    private Task task;
+    SimpleStringProperty ssp;
+    SimpleObjectProperty canvas;
 
-    public StartController(Space s){
-        space = s;
+    public StartController(){
+        ui = new SequentialSpace();
+        ssp = new SimpleStringProperty("Not Sync");
     }
-
     @FXML
     public void initialize(){
-        task = new Task<Integer>() {
-            public SimpleStringProperty labelString = new SimpleStringProperty("Start");
+        UserTask userTask = new UserTask(ui);
+        ssp.bind(userTask.messageProperty());
+        ssp.addListener(new ChangeListener<String>() {
             @Override
-            protected Integer call() throws Exception {
-                while(!isCancelled()) {
-                    Object[] t = space.getp(new FormalField(String.class));
-
-                    
-                    if (t==null){
-                        continue;
-                    }
-                    updateMessage(t[0].toString());
+            public void changed(ObservableValue<? extends String> observableValue, String tOld, String tNew) {
+                switch(tNew){
+                    case "CONNECTED":
+                        label1.setText(tNew);
+                        break;
+                    case "ENTER":
+                        enterServerButton.setDisable(true);
+                        break;
                 }
-                return 1;
             }
-        };
-        System.out.println("Initcontroller");
-        Thread th = new Thread(task);
+        });
+        Thread th = new Thread(userTask);
         th.setDaemon(true);
         th.start();
 
-        label.textProperty().bind(task.messageProperty());
-        System.out.println("Thread activated");
-
     }
 
     @FXML
-    void putIntoInbox(ActionEvent event) throws InterruptedException {
-        System.out.println("added update: "+update);
-        space.put("Somestrings"+update);
-        update++;
-
+    void joinServer () throws InterruptedException {
+        if(ipTextField.getText().isEmpty()||nameTextField.getText().isEmpty()||roomNameTextField.getText().isEmpty()){
+            return;
+        }
+        ui.put(UiFlag.IP,ipTextField.getText());
+        ui.put(UiFlag.NAME,nameTextField.getText());
+        ui.put(UiFlag.ROOMNAME,roomNameTextField.getText());
     }
-
     @FXML
-    void syncInterface() throws InterruptedException {
-        System.out.println("Starting Thread...");
-
-
-//        new Thread(new Syncer(labelString,space)).start();
-        System.out.println("Thread running...");
+    void hostServer () throws InterruptedException {
+        if(ipTextField.getText().isEmpty()||nameTextField.getText().isEmpty()){
+            return;
+        }
+        ui.put(UiFlag.IP,ipTextField.getText());
+        ui.put(UiFlag.NAME,nameTextField.getText());
+        ui.put(UiFlag.ROOMNAME,"HOST");
     }
+
+//    @FXML
+//    public void initialize(){
+//        task = new Task<Integer>() {
+//            public SimpleStringProperty labelString = new SimpleStringProperty("Start");
+//            @Override
+//            protected Integer call() throws Exception {
+//                while(!isCancelled()) {
+//                    Object[] t = space.getp(new FormalField(String.class));
+//
+//
+//                    if (t==null){
+//                        continue;
+//                    }
+//                    updateMessage(t[0].toString());
+//                }
+//                return 1;
+//            }
+//        };
+//        System.out.println("Initcontroller");
+//        Thread th = new Thread(task);
+//        th.setDaemon(true);
+//        th.start();
+//
+//        label.textProperty().bind(task.messageProperty());
+//        System.out.println("Thread activated");
+//
+//    }
+
 
 }

@@ -24,11 +24,11 @@ public class App extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("start.fxml"));
-		fxmlLoader.setController(new StartController(inbox));
-		Parent root = fxmlLoader.load();
-		primaryStage.setScene(new Scene(root,300,275));
-		primaryStage.setTitle("Titles");
-		primaryStage.show();
+//		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("start.fxml"));
+//		fxmlLoader.setController(new StartController(inbox));
+//		Parent root = fxmlLoader.load();
+//		primaryStage.setScene(new Scene(root,300,275));
+//		primaryStage.setTitle("Titles");
+//		primaryStage.show();
 	}
 }

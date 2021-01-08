@@ -21,6 +21,7 @@ public class User {
     protected boolean isturn;
 
     protected static Space chat;
+    protected static Space ui;
 
     public static void main(String[] args) {
 
@@ -33,6 +34,7 @@ public class User {
             //get the ip for the server
             while (true) { //TODO: This must be done through UI
                 System.out.print("Enter the server ip in the form host:gate");
+
                 uri = input.readLine();
                 hostPort = uri;
                 uri = makeUri("serverSpace");
