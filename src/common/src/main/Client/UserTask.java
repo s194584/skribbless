@@ -1,34 +1,36 @@
 package common.src.main.Client;
 
 
-import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.UnknownHostException;
+
 import common.src.main.Enum.*;
 import org.jspace.Space;
 
 public class UserTask extends Task {
-    protected String name;
-    protected int userID;
+    protected String name;  // Needed
+    protected int userID; // Needed
+
     protected String roomName;
     protected String hostPort;
-    protected int score;
-    protected boolean isTurn;
+//    protected int score;
+//    protected boolean isTurn;
 
     RemoteSpace serverSpace;
-    protected Space chat;
+    protected Space lobby; // Needed
     protected Space ui;
 
     public UserTask(Space ui){
         this.ui = ui;
+    }
+
+    public TaskInfo getTaskInfo(){
+        return new TaskInfo(name,userID, lobby);
     }
 
     @Override
@@ -66,11 +68,12 @@ public class UserTask extends Task {
         userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
         System.out.println("myID: " + userID);
 
-        // Read username from UI
-        name = (String) ui.get(new ActualField(UiFlag.NAME),new FormalField(String.class))[1];
+
 
                     // Choose to host a room or join one
             while (true) { //TODO: This must be done through UI
+                // Read username from UI
+                name = (String) ui.get(new ActualField(UiFlag.NAME),new FormalField(String.class))[1];
                 System.out.print("type room-id or HOST:");
                 try {
                     String tempRoom = (String) ui.get(new ActualField(UiFlag.ROOMNAME),new FormalField(String.class))[1];
@@ -89,7 +92,7 @@ public class UserTask extends Task {
                         // get ok from creationHandler
                         serverSpace.get(new ActualField(userID),new ActualField(InitialMessage.OK));
                         System.out.println(makeUri(roomName));
-                        chat = new RemoteSpace(makeUri(roomName));
+                        lobby = new RemoteSpace(makeUri(roomName));
                         System.out.println("Client connected to: "+makeUri(roomName));
                         updateMessage("CONNECTED");
                         break;

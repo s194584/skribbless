@@ -1,5 +1,6 @@
 package common.src.main;
 
+import common.src.main.Client.GameController;
 import common.src.main.Client.UserTask;
 import common.src.main.Enum.UiFlag;
 import javafx.application.Platform;
@@ -12,16 +13,22 @@ import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Pane;
 import org.jspace.FormalField;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
+import java.io.IOException;
 
 
 public class StartController {
+    @FXML
+    Pane root;
     @FXML
     Button enterServerButton;
     @FXML
@@ -32,17 +39,17 @@ public class StartController {
     private TextField roomNameTextField;
     @FXML
     Label label1;
-    Space ui;
 
+    Space ui;
     SimpleStringProperty ssp;
-    SimpleObjectProperty canvas;
 
     public StartController(){
         ui = new SequentialSpace();
         ssp = new SimpleStringProperty("Not Sync");
     }
+
     @FXML
-    public void initialize(){
+    public void initialize() {
         UserTask userTask = new UserTask(ui);
         ssp.bind(userTask.messageProperty());
         ssp.addListener(new ChangeListener<String>() {
@@ -51,9 +58,14 @@ public class StartController {
                 switch(tNew){
                     case "CONNECTED":
                         label1.setText(tNew);
-                        break;
-                    case "ENTER":
-                        enterServerButton.setDisable(true);
+                        try {
+                            FXMLLoader fxmlLoader = new FXMLLoader();
+                            fxmlLoader.setLocation(getClass().getResource("/game.fxml"));
+                            fxmlLoader.setController(new GameController(root,userTask.getTaskInfo()));
+                            fxmlLoader.load();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         break;
                 }
             }
@@ -61,7 +73,6 @@ public class StartController {
         Thread th = new Thread(userTask);
         th.setDaemon(true);
         th.start();
-
     }
 
     @FXML
@@ -73,6 +84,7 @@ public class StartController {
         ui.put(UiFlag.NAME,nameTextField.getText());
         ui.put(UiFlag.ROOMNAME,roomNameTextField.getText());
     }
+
     @FXML
     void hostServer () throws InterruptedException {
         if(ipTextField.getText().isEmpty()||nameTextField.getText().isEmpty()){

@@ -76,7 +76,6 @@ public class User {
                             serverSpace.put(userID,"",initialMessage);
                     }
 
-
                     //get the response from the server
                     Object[] response = serverSpace.get(new ActualField(userID),new FormalField(InitialMessage.class),new FormalField(String.class));
                     if (response[1].equals(InitialMessage.OK)) {
