@@ -1,6 +1,6 @@
 package common.src.main.Server;
 
-import common.src.main.Enum.InitialMessage;
+import common.src.main.Enum.ServerFlag;
 import common.src.main.Enum.RoomMessage;
 import org.jspace.*;
 
@@ -31,7 +31,7 @@ public class Room implements Runnable {
 
             // Add the space to the repository
             repo.add(roomName, chat);
-            serverSpace.put(roomName,InitialMessage.ROOMOK);
+            serverSpace.put(roomName, ServerFlag.ROOMOK);
             System.out.println("Room added: " + roomName);
 
             // Waiting on game to start

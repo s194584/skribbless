@@ -64,7 +64,7 @@ public class UserTask extends Task {
         }
 
         // request and get id from server
-        serverSpace.put(InitialMessage.CONNECTED,"");
+        serverSpace.put(ServerFlag.CONNECTED,"");
         userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
         System.out.println("myID: " + userID);
 
@@ -74,23 +74,21 @@ public class UserTask extends Task {
             while (true) { //TODO: This must be done through UI
                 // Read username from UI
                 name = (String) ui.get(new ActualField(UiFlag.NAME),new FormalField(String.class))[1];
-                System.out.print("type room-id or HOST:");
                 try {
                     String tempRoom = (String) ui.get(new ActualField(UiFlag.ROOMNAME),new FormalField(String.class))[1];
                     if (!tempRoom.equals("HOST")) {
-                        serverSpace.put(userID,tempRoom,InitialMessage.JOIN);
+                        System.out.println("JOINING");
+                        serverSpace.put(userID,tempRoom, ServerFlag.JOIN);
                     }
                     else {
-                        serverSpace.put(userID,"",InitialMessage.HOST);
+                        System.out.println("HOSTING");
+                        serverSpace.put(userID,"", ServerFlag.HOST);
                     }
 
                     //get the response from the server
-                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(InitialMessage.class),new FormalField(String.class));
-                    if (response[1].equals(InitialMessage.OK)) {
+                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(ServerFlag.class),new FormalField(String.class));
+                    if (response[1].equals(ServerFlag.OK)) {
                         roomName = response[2].toString();
-
-                        // get ok from creationHandler
-                        serverSpace.get(new ActualField(userID),new ActualField(InitialMessage.OK));
                         System.out.println(makeUri(roomName));
                         lobby = new RemoteSpace(makeUri(roomName));
                         System.out.println("Client connected to: "+makeUri(roomName));

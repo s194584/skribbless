@@ -7,7 +7,6 @@ import org.jspace.RemoteSpace;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.UnknownHostException;
 import common.src.main.Enum.*;
 import org.jspace.Space;
@@ -52,7 +51,7 @@ public class User {
             }
 
             // request and get id from server
-            serverSpace.put(InitialMessage.CONNECTED,"");
+            serverSpace.put(ServerFlag.CONNECTED,"");
             userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
             System.out.println("myID: " + userID);
 
@@ -66,23 +65,23 @@ public class User {
                 System.out.print("type room-id or HOST:");
                 String choice = input.readLine();
                 try {
-                    InitialMessage initialMessage;
+                    ServerFlag initialMessage;
                     if (!choice.equals("HOST")) {
-                            initialMessage = InitialMessage.JOIN;
+                            initialMessage = ServerFlag.JOIN;
                             serverSpace.put(userID,choice,initialMessage);
                         }
                         else {
-                            initialMessage = InitialMessage.HOST;
+                            initialMessage = ServerFlag.HOST;
                             serverSpace.put(userID,"",initialMessage);
                     }
 
                     //get the response from the server
-                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(InitialMessage.class),new FormalField(String.class));
-                    if (response[1].equals(InitialMessage.OK)) {
+                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(ServerFlag.class),new FormalField(String.class));
+                    if (response[1].equals(ServerFlag.OK)) {
                         roomName = response[2].toString();
 
                         // get ok from creationHandler
-                        serverSpace.get(new ActualField(userID),new ActualField(InitialMessage.OK));
+                        serverSpace.get(new ActualField(userID),new ActualField(ServerFlag.OK));
                         System.out.println(makeUri(roomName));
                         chat = new RemoteSpace(makeUri(roomName));
                         break;
