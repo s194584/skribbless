@@ -1,5 +1,8 @@
 package common.src.main.Enum;
 
 public enum RoomFlag {
-    CONNECTED
+    CONNECTED,
+    DISCONNECTED,
+    MESSAGE,
+    CANVAS
 }
