@@ -2,6 +2,7 @@ package common.src.main;
 
 import common.src.main.Client.GameController;
 import common.src.main.Client.UserTask;
+import common.src.main.Enum.ServerFlag;
 import common.src.main.Enum.UiFlag;
 import javafx.application.Platform;
 import javafx.beans.binding.StringBinding;
@@ -83,6 +84,7 @@ public class StartController {
         ui.put(UiFlag.IP,ipTextField.getText());
         ui.put(UiFlag.NAME,nameTextField.getText());
         ui.put(UiFlag.ROOMNAME,roomNameTextField.getText());
+        ui.put(UiFlag.ACTION, ServerFlag.JOIN);
     }
 
     @FXML
@@ -92,7 +94,8 @@ public class StartController {
         }
         ui.put(UiFlag.IP,ipTextField.getText());
         ui.put(UiFlag.NAME,nameTextField.getText());
-        ui.put(UiFlag.ROOMNAME,"HOST");
+        ui.put(UiFlag.ROOMNAME,"");
+        ui.put(UiFlag.ACTION, ServerFlag.HOST);
     }
 
 //    @FXML

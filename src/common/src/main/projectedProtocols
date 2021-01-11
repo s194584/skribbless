@@ -1,0 +1,123 @@
+
+
+### USERTASK
+// projection 1
+connect()
+
+// projection 2
+if isConnected() then
+    channel(userTask,server).put("then")
+    // projection 3
+    channel(userTask,server).put(CONNECTED,"")
+    // projection 4
+    id = channel(server,userTask).get(int)
+    // projection 6
+    channel(userTask,creationHandler).put(action,roomName)
+    // projection 7
+    branch = channel(creationHandler,userTask).get(String)
+    if branch == "then" then
+        // projection 14
+        response = channel(creationHandler,userTask).get(int,ServerFlag,String)
+    else
+        // projection 17
+        branch = channel(creationHandler,userTask).get(String)
+        if branch == "then" then
+            // projection 18
+            response = channel(creationHandler,userTask).get(ServerFlag,String)
+        else
+            // projection 19
+            response = channel(creationHandler,userTask).get(ServerFlag,String)
+    // projection 20
+    if response[1] == OK then
+        connectToRoom(response[2])
+        connected()
+    else
+        notConnected()
+else
+    channel(userTask,server).put("else")
+    channel(userTask,creationHandler).put("else")
+    // projection 4
+    reset()
+    
+
+### SERVER
+// projection 2
+branch = channel(userTask,server).get(String)
+if branch == "then" then
+    // projection 3
+    channel(userTask,server).get(ServerFlag,String)
+    // projection 4
+    channel(server,userTask).put(generateId())
+    // projection 5
+    openCreationHandler(id,space,repository)
+    // projection 7
+    branch = channel(creationHandler,server).get(String)
+    if branch == "then" then
+        // projection 8
+        message = channel(creationHandler,server).get(ServerFlag,String)
+        // projection 9 // SERVER has chosen message GENERATEROOM
+        channel(server,creationHandler).put(GENERATEDROOM,createRoomName())
+        // projection 12
+        message = channel(creationHandler,server).get(ServerFlag,String)
+        // projection 13
+        setRoom()
+    else
+        // projection 15
+        message = channel(creationHandler,server).get(ServerFlag,String)
+        // projection 16 //SERVER has chosen CHECK ROOM
+        channel(server,creationHandler).put(data(message),checkRoom(data(message)))
+else
+    // NOTHING
+    
+
+### CREATIONHANDLER
+// projection 2
+branch = channel(userTask,creationHandler).get(String)
+if branch == "then" then
+    // projection 6
+    message = channel(userTask,creationHandler).get(ServerFlag,String)
+    // projection 7
+    if message[0] == HOST then
+        channel(creationHandler,server).put("then")
+        channel(creationHandler,userTask).put("then")
+        channel(creationHandler,room).put("then")
+        // projection 8
+        channel(creationHandler,server).put(GENERATEROOM,"")
+        // projection 9
+        message = channel(server,creationHandler).get(GENERATEDROOM,String)
+        // projection 10
+        createRoom(message[1])
+        // projection 11
+        channel(room,creationHandler).get(message[1],ServerFlag)
+        // projection 12
+        channel(creationHandler,server).put(SETROOM,name(roomName))
+        // projection 14
+        channel(creationHandler,userTask).put(id,OK,name(roomName))
+    else
+        channel(creationHandler,server).put("else")
+        channel(creationHandler,userTask).put("else")
+        channel(creationHandler,room).put("else")
+        // projection 15
+        channel(creationHandler,server).put(CHECKROOM,message[1])
+        // projection 16
+        message = channel(server,creationHandler).response(message[1],Boolean)
+        // projection 17
+        if message[1] then
+            channel(creationHandler,userTask).put("then")
+            // projection 18
+            channel(creationHandler,userTask).put(OK,message[0])
+        else
+            channel(creationHandler,userTask.put("else")
+            // projection 19
+            channel(creationHandler,userTask).put(KO,message[0])
+else
+    // TERMINATE
+
+### ROOM
+// projection 7
+branch = channel(creationHandler,room).get(String)
+if branch == "then" then
+    // projection 11
+    channel(room,creationHandler).put(roomName,OK)
+else
+    // outside protocol

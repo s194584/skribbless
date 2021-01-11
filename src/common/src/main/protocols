@@ -1,0 +1,39 @@
+#### Start game
+   * Knows IP of server beforehand
+# Since the ui tuplespace is one way and only providing data to usertask
+# we abstract this.
+# ui.(IP,ip) -> usertask.hostport(IP,String);
+# ui.(NAME,name) -> usertask.name(NAME,String);
+# ui.(ROOMNAME,roomName) -> usertask.roomname(ROOMNAME,String);
+# ui.(ACTION,joinhost) -> usertask.action(ACTION,ServerFlag);
+
+connect()@usertask	// if an exception is caught, go to start
+
+if isConnected()@usertask then
+    usertask.(CONNECTED,"") -> server.message(ServerFlag,String)
+    server.(generateId()) -> usertask.id(int)
+    openCreationHandler(id,space,repository)@server
+    usertask.(action,roomName) -> creationHandler.message(ServerFlag,String)
+    if message[0] == HOST@creationHandler then
+        creationHandler.(GENERATEROOM,"") -> server.message(ServerFlag,String)
+        server.(GENERATEDROOM,createRoomName()) -> creationHandler.message(GENERATEDROOM,String)
+        createRoom(message[1])@creationHandler
+        room.(roomName,ROOMOK) -> creationHandler.(message[1],ServerFlag)
+        creationHandler.(SETROOM,roomName[1]) -> server.message(ServerFlag,String)
+        setRoom()@server
+        creationHandler.(id,OK,roomName[1]) -> usertask.response(int,ServerFlag,String)
+    else
+        creationHandler.(CHECKROOM,message[2]) -> server.message(ServerFlag,String)
+        server.(message[1],checkRoom(data(message[1]))) -> creationHandler.serverResponse(message[2],boolean)
+        if serverResponse[1]@creationHandler then
+            creationHandler.(OK,message[2]) -> usertask.response(ServerFlag,String)
+        else
+            creationHandler.(KO,message[2]) -> usertask.response(ServerFlag,String)
+
+    if response[1] == OK@usertask then
+        connectToRoom(response[2])@usertask
+        connected()@usertask
+    else
+        notConnected()@usertask
+else
+    reset()@usertask
