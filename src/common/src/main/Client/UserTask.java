@@ -66,12 +66,6 @@ public class UserTask extends Task {
             }
         }
 
-//        Text text = new Text("hej");
-//        Paint paint = text.getFill();
-//        System.out.println(paint.toString());
-//        text.setFill(Color.valueOf());
-//        serverSpace.put(paint);
-
         // request and get id from server
         serverSpace.put(ServerFlag.CONNECTED, "");
         userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
