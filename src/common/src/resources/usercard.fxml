@@ -2,21 +2,24 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-
-<HBox alignment="CENTER" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<HBox fx:id="root" alignment="CENTER" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <ImageView fitHeight="107.0" fitWidth="107.0" pickOnBounds="true" preserveRatio="true" />
+      <Label fx:id="characterLabel" text="Label">
+         <font>
+            <Font name="Consolas Bold" size="27.0" />
+         </font>
+      </Label>
       <VBox alignment="CENTER">
          <children>
-            <Label text="NAME" />
+            <Label fx:id="nameLabel" text="NAME" />
             <HBox alignment="CENTER">
                <children>
                   <Label text="Points: " />
-                  <Label text="####" />
+                  <Label fx:id="pointLabel" text="####" />
                </children>
             </HBox>
          </children>
