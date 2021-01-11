@@ -44,12 +44,14 @@ public class GameUserTask extends Task {
         // GameUserTask now becomes an inbox and reads the inbox and notifies ui (GameController).
         while (true) {
             if (isCancelled()) {
-                //TODO: This is never actually done.
+                //TODO: This is never actually done. We must cancel task in GameController
+                System.out.println("GameUserTask is cancelled");
                 lobby.put(RoomFlag.DISCONNECTED,userId,user);
                 return -1;
             }
 
             Object[] message = inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class));
+            System.out.println("GameUserTask got message: " + message[0]);
             updateValue(message);
         }
     }

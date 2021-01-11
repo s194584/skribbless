@@ -2,6 +2,9 @@ package common.src.main.Client;
 
 
 import javafx.concurrent.Task;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.text.Text;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -62,6 +65,12 @@ public class UserTask extends Task {
                 System.out.println("Can't find server");
             }
         }
+
+//        Text text = new Text("hej");
+//        Paint paint = text.getFill();
+//        System.out.println(paint.toString());
+//        text.setFill(Color.valueOf());
+//        serverSpace.put(paint);
 
         // request and get id from server
         serverSpace.put(ServerFlag.CONNECTED, "");

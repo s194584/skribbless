@@ -6,20 +6,20 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<HBox fx:id="root" alignment="CENTER" spacing="5.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<HBox fx:id="root" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="44.0" prefWidth="180.0" spacing="5.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <Label fx:id="characterLabel" text="Label">
+      <Label fx:id="characterLabel" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="31.0" prefWidth="102.0" text="Label">
          <font>
             <Font name="Consolas Bold" size="27.0" />
          </font>
       </Label>
-      <VBox alignment="CENTER">
+      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="34.0" prefWidth="84.0">
          <children>
-            <Label fx:id="nameLabel" text="NAME" />
-            <HBox alignment="CENTER">
+            <Label fx:id="nameLabel" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="17.0" prefWidth="72.0" text="NAME" />
+            <HBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="17.0" prefWidth="90.0">
                <children>
-                  <Label text="Points: " />
-                  <Label fx:id="pointLabel" text="####" />
+                  <Label maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="17.0" prefWidth="48.0" text="Points: " />
+                  <Label fx:id="pointLabel" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="17.0" prefWidth="37.0" text="####" />
                </children>
             </HBox>
          </children>

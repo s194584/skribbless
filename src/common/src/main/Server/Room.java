@@ -1,11 +1,15 @@
 package common.src.main.Server;
 
+import common.src.main.Client.TextInfo;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import common.src.main.Enum.ServerFlag;
 import common.src.main.Client.User;
+import javafx.scene.text.Text;
+import javafx.scene.paint.Color;
 import org.jspace.*;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -15,11 +19,12 @@ public class Room implements Runnable {
     protected Space lobby;
 
     protected String roomName;
-    protected String currentWord; //The word which is being drawn
+    protected String currentWord = "justsoitsnotnull"; //The word which is being drawn
 
     protected int playerAmount = 0;
     protected ArrayList<User> users = new ArrayList<User>();
     protected HashMap<Integer,Space> playerInboxes = new HashMap<>();
+    protected HashMap<Integer,String> playerNames = new HashMap<>(); //This is used for messages in the chat.
 
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
@@ -59,6 +64,7 @@ public class Room implements Runnable {
                         //Generate inboxSpace and sent connection string, back to user. Add user to list
                         boolean isLeader = playerAmount == 0;
                         addplayer(playerID);
+                        playerNames.put(playerID,((User) data).getName());
                         lobby.put(playerID,createName(playerID),isLeader);
                         System.out.println("User: "+message[1].toString()+" has connected");
 
@@ -81,6 +87,9 @@ public class Room implements Runnable {
                     case CANVAS:
                         break;
                     case MESSAGE:
+                        boolean correct = filterMessage(data);
+                        TextInfo textInfo = createText(data,correct,playerNames.get(playerID));
+                        broadcastToInboxes(RoomResponseFlag.MESSAGE,textInfo);
                         break;
                 }
 
@@ -96,6 +105,21 @@ public class Room implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    //Creates the text with color coding to be broadcasted
+    private TextInfo createText(Object data, boolean correct, String playerName) {
+        String content = playerName + ": " + data.toString();
+        TextInfo textInfo;
+        if (correct) {
+            textInfo = new TextInfo(content, (Color.GREEN).toString());
+        }
+        textInfo = new TextInfo(content, (Color.BLACK).toString());
+        return textInfo;
+    }
+
+    private boolean filterMessage(Object data) {
+        return currentWord.equals(data.toString());
     }
 
     private void broadcastUsersToInbox(RoomResponseFlag flag, Space inbox) {
@@ -143,19 +167,5 @@ public class Room implements Runnable {
 
     public Space getLobby() {
         return lobby;
-    }
-}
-
-// A thread for sending messages to inboxes (Not sure if needed).
-class sendMesseges implements Runnable {
-    Space userInbox;
-
-    sendMesseges(Space space) {
-        this.userInbox = space;
-    }
-
-    @Override
-    public void run() {
-        //TODO: send messages to inboxes of every user in the room
     }
 }
