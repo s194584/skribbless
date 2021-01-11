@@ -52,6 +52,8 @@ public class Room implements Runnable {
                 int playerID = (int) message[1];
                 Object data = message[2];
 
+                System.out.println(roomName + " got message: " + message[0]);
+
                 switch ((RoomFlag) message[0]){
                     case CONNECTED:
                         //Generate inboxSpace and sent connection string, back to user. Add user to list

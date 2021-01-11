@@ -67,7 +67,7 @@ public class Server {
     }
 
     private static boolean checkRoom(String roomName) {
-        return rooms.get(roomName);
+        return rooms.getOrDefault(roomName,false);
     }
 
     private static String createRoomName() {

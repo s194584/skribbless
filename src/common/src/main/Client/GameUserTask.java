@@ -18,8 +18,8 @@ public class GameUserTask extends Task {
     Space lobby;
     Space ui;
 
-    public GameUserTask(TaskInfo ti, Space ui){
-        user = new User(ti.getName()+":D",ti.getName(),0);
+    public GameUserTask(TaskInfo ti, Space ui) {
+        user = new User(ti.getName() + ":D", ti.getName(), 0);
         userId = ti.getUserID();
         lobby = ti.getLobby();
         hostPort = ti.getHostPort();
@@ -29,8 +29,8 @@ public class GameUserTask extends Task {
 
     @Override
     protected Integer call() throws Exception {
-        lobby.put(RoomFlag.CONNECTED,userId,user);
-        Object[] roomResponse = lobby.get(new ActualField(userId),new FormalField(String.class), new FormalField(Boolean.class));
+        lobby.put(RoomFlag.CONNECTED, userId, user);
+        Object[] roomResponse = lobby.get(new ActualField(userId), new FormalField(String.class), new FormalField(Boolean.class));
         System.out.println("Got response from room:" + roomResponse[1] + " isleader: " + roomResponse[2]);
         inbox = new RemoteSpace(makeUri(roomResponse[1].toString()));
         this.isLeader = (boolean) roomResponse[2];
@@ -39,12 +39,15 @@ public class GameUserTask extends Task {
         updateMessage("" + isLeader);
 
         //Make uiInbox thread.
-        new Thread(new UiInbox(ui,lobby)).start();
+        new Thread(new UiInbox(ui, lobby)).start();
 
         // GameUserTask now becomes an inbox and reads the inbox and notifies ui (GameController).
         while (true) {
-            if (isCancelled())
+            if (isCancelled()) {
+                //TODO: This is never actually done.
+                lobby.put(RoomFlag.DISCONNECTED,userId,user);
                 return -1;
+            }
 
             Object[] message = inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class));
             updateValue(message);
@@ -71,8 +74,8 @@ class UiInbox implements Runnable {
         while (true) {
             try {
                 Object[] message = uiSpace.get(new FormalField(RoomFlag.class),
-                                                 new FormalField(Integer.class),
-                                                 new FormalField(Object.class));
+                        new FormalField(Integer.class),
+                        new FormalField(Object.class));
                 lobby.put(message);
             } catch (InterruptedException e) {
                 e.printStackTrace();
