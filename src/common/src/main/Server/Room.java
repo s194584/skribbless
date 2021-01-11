@@ -9,8 +9,6 @@ import org.jspace.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static common.src.main.Enum.RoomFlag.CONNECTED;
-
 public class Room implements Runnable {
     protected SpaceRepository repo;
     protected Space serverSpace;
@@ -60,10 +58,11 @@ public class Room implements Runnable {
                         boolean isLeader = playerAmount == 0;
                         addplayer(playerID);
                         lobby.put(playerID,createName(playerID),isLeader);
-                        users.add((User) data);
                         System.out.println("User: "+message[1].toString()+" has connected");
 
                         //Broadcast arrival of new player to other players:
+                        broadcastUsersToInbox(RoomResponseFlag.NEWPLAYER,playerInboxes.get(playerID));
+                        users.add((User) data); //Add user after to ensure no duplicates
                         broadcastToInboxes(RoomResponseFlag.NEWPLAYER,data);
                         break;
                     case DISCONNECTED:
@@ -92,6 +91,16 @@ public class Room implements Runnable {
 
 
 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void broadcastUsersToInbox(RoomResponseFlag flag, Space inbox) {
+        try {
+            for(User user : users) {
+                inbox.put(flag,user);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
