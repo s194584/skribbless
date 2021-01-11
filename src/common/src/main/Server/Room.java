@@ -1,21 +1,26 @@
 package common.src.main.Server;
 
+import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.ServerFlag;
-import common.src.main.Enum.RoomMessage;
 import org.jspace.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+
+import static common.src.main.Enum.RoomFlag.CONNECTED;
 
 public class Room implements Runnable {
     protected SpaceRepository repo;
     protected Space serverSpace;
-    protected Space chat;
+    protected Space lobby;
 
     protected String roomName;
     protected String currentWord; //The word which is being drawn
-    protected static int playerAmount = 0;
-    protected static HashMap<Integer,Space> playerInboxes;
 
+    protected int playerAmount = 0;
+    protected HashMap<Integer,Space> playerInboxes;
+
+    //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
     public Room(SpaceRepository repo,String roomName,Space serverSpace) {
         this.repo = repo;
@@ -34,50 +39,53 @@ public class Room implements Runnable {
             serverSpace.put(roomName, ServerFlag.ROOMOK);
             System.out.println("Room added: " + roomName);
 
+
             // Waiting on game to start
             Template initialMessageTemplate = new Template (new FormalField(String.class),
-                    new FormalField(RoomMessage.class));  //Get name,enum
+                    new FormalField(RoomFlag.class));  //Get name,enum
 
-            // We initially use chat to start game.
-            while (true) {
-                //Object[] message = chat.get(initialMessageTemplate) //TODO: why does this not work??
-                Object[] message = chat.get(new FormalField(String.class), new FormalField(RoomMessage.class));
-                if (message[1].equals(RoomMessage.NEWPLAYER)) {
-                    addplayer(message[0].toString(),repo); //add player and generate their inbox
-                } else if (message[1].equals(RoomMessage.STARTGAME)) {
-                    break;
+            while (true){
+                Object[] message = lobby.get(new FormalField(RoomFlag.class),
+                                                new FormalField(Integer.class),
+                                                new FormalField(Object.class));
+                switch ((RoomFlag) message[0]){
+                    case CONNECTED:
+                        System.out.println("User: "+message[1].toString()+" has connected");
+                        break;
                 }
+
+
+
+
+
+
             }
 
-            //Chat function
-            while (true) {
-                Object[] t = chat.get(new FormalField(String.class), new FormalField(String.class)); //Get messages
-                System.out.println(t[0] + ": " + t[1]);
-            }
+
 
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private static void addplayer(String name, SpaceRepository repo) {
+    private void addplayer(String name, SpaceRepository repo) {
         Space inbox = generateInbox(name, repo);
         playerInboxes.put(playerAmount,inbox);
         playerAmount++;
     }
 
-    private static Space generateInbox(String name, SpaceRepository repo) {
+    private Space generateInbox(String name, SpaceRepository repo) {
         Space inbox = new SequentialSpace();
         repo.add(createName(name),inbox);
         return inbox;
     }
 
-    private static String createName(String name) {
+    private String createName(String name) {
         return name + "-" + playerAmount;
     }
 
-    public Space getChat() {
-        return chat;
+    public Space getLobby() {
+        return lobby;
     }
 }
 

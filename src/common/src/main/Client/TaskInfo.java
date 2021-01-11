@@ -3,9 +3,9 @@ package common.src.main.Client;
 import org.jspace.Space;
 
 public class TaskInfo {
-    String name;
-    int userID;
-    Space lobby;
+    private String name;
+    private int userID;
+    private Space lobby;
 
     public TaskInfo(String n, int uID, Space l){
         name = n;

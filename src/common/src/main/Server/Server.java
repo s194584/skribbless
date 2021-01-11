@@ -96,7 +96,6 @@ class CreationHandler implements Runnable {
     public void run() {
         Template initialMessageTemplate = new Template (new ActualField(playerID),new FormalField(String.class),
                 new FormalField(ServerFlag.class));  //Get name,enum
-
         try {
             while (true) {
                 Object[] message = space.get(initialMessageTemplate.getFields());

@@ -18,6 +18,7 @@ public class ClientApp extends Application {
         fxmlLoader.setController(new StartController());
         Parent root = fxmlLoader.load();
         stage.setScene(new Scene(root));
+        stage.sizeToScene();
         stage.show();
     }
 }
