@@ -44,7 +44,7 @@ public class GameController {
     @FXML
     TextField chatTextField;
 
-    private ObservableList chatList;
+
     private ObservableList<User> users = FXCollections.observableArrayList();
 
     private SimpleObjectProperty sop;
