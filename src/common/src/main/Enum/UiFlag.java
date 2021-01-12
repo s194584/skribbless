@@ -2,7 +2,6 @@ package common.src.main.Enum;
 
 public enum UiFlag {
     // To UserTask
-    IP,NAME,ROOMNAME
+    IP,NAME,ROOMNAME,ACTION
 
-    // To UI
 }

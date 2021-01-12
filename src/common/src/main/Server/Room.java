@@ -28,22 +28,24 @@ public class Room implements Runnable {
 
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
-    public Room(SpaceRepository repo,String roomName,Space serverSpace) {
+    // projection 7 (only created if branch == then is taken)
+    public Room(SpaceRepository repo,String roomName,Space serverSpace) throws InterruptedException {
         this.repo = repo;
         this.roomName = roomName;
         this.serverSpace = serverSpace;
+        lobby = new SequentialSpace();
+        repo.add(roomName, lobby);
+        // projection 11
+        serverSpace.put(roomName, ServerFlag.ROOMOK);
+        System.out.println("Room added: " + roomName);
     }
 
     @Override
     public void run() {
         try {
             // Create a local space (lobby)
-            lobby = new SequentialSpace();
 
             // Add the space to the repository
-            repo.add(roomName, lobby);
-            serverSpace.put(roomName, ServerFlag.ROOMOK);
-            System.out.println("Room added: " + roomName);
 
 
             // Waiting on game to start

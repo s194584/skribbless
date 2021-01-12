@@ -1,15 +1,14 @@
 package common.src.main.Client;
 
 
+import common.src.main.Server.Server;
 import javafx.concurrent.Task;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.scene.text.Text;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 import common.src.main.Enum.*;
@@ -17,7 +16,7 @@ import org.jspace.Space;
 
 public class UserTask extends Task {
     protected String name;  // Needed
-    protected int userID; // Needed
+    protected int id; // Needed
 
     protected String roomName;
     protected String hostPort; //Needed
@@ -27,158 +26,184 @@ public class UserTask extends Task {
     RemoteSpace serverSpace;
     protected Space lobby; // Needed
     protected Space ui;
+    private boolean connection;
 
     public UserTask(Space ui) {
         this.ui = ui;
     }
 
     public TaskInfo getTaskInfo() {
-        return new TaskInfo(name, userID, lobby,hostPort);
+        return new TaskInfo(name, id, lobby,hostPort);
     }
 
     @Override
     protected Integer call() throws Exception {
-        if (isCancelled()) {
-            return 1;
-        }
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-
-        String uri = "";
-
-        //get the ip for the server
         while (true) {
-            System.out.print("Enter the server ip in the form host:gate");
-
-            uri = ui.get(new ActualField(UiFlag.IP), new FormalField(String.class))[1].toString();
-            hostPort = uri;
-
-            // "tcp://localhost:9001/serverSpace?keep"
-            uri = makeUri("serverSpace");
-            System.out.println(uri);
-
-
-            try {
-
-                serverSpace = new RemoteSpace(uri);
-                break;
-            } catch (Exception e) {
-                System.out.println("Can't find server");
+            if (isCancelled()) {
+                return 1;
             }
-        }
 
-//        Text text = new Text("hej");
-//        Paint paint = text.getFill();
-//        System.out.println(paint.toString());
-//        text.setFill(Color.valueOf());
-//        serverSpace.put(paint);
-
-        // request and get id from server
-        serverSpace.put(ServerFlag.CONNECTED, "");
-        userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
-        System.out.println("myID: " + userID);
-
-
-        // Choose to host a room or join one
-        while (true) {
-            // Read username from UI
+            // Information from ui
+            hostPort = ui.get(new ActualField(UiFlag.IP), new FormalField(String.class))[1].toString();
             name = (String) ui.get(new ActualField(UiFlag.NAME), new FormalField(String.class))[1];
-            try {
-                String tempRoom = (String) ui.get(new ActualField(UiFlag.ROOMNAME), new FormalField(String.class))[1];
-                if (!tempRoom.equals("HOST")) {
-                    System.out.println("JOINING");
-                    serverSpace.put(userID, tempRoom, ServerFlag.JOIN);
-                } else {
-                    System.out.println("HOSTING");
-                    serverSpace.put(userID, "", ServerFlag.HOST);
-                }
+            String roomName = (String) ui.get(new ActualField(UiFlag.ROOMNAME), new FormalField(String.class))[1];
+            ServerFlag action = (ServerFlag) ui.get(new ActualField(UiFlag.ACTION), new FormalField(ServerFlag.class))[1];
 
-                //get the response from the server
-                Object[] response = serverSpace.get(new ActualField(userID), new FormalField(ServerFlag.class), new FormalField(String.class));
-                if (response[1].equals(ServerFlag.OK)) {
-                    roomName = response[2].toString();
-                    System.out.println(makeUri(roomName));
-                    lobby = new RemoteSpace(makeUri(roomName));
-                    System.out.println("Client connected to: " + makeUri(roomName));
-                    updateMessage("CONNECTED");
+            // Helper
+            Object[] response;
+
+            // projection 1
+            System.out.println("proj1");
+            connect();
+            // projection 2
+            if (isConnected()) {
+                System.out.println("proj2then");
+                System.out.println("Client connected");
+                // projection 3
+                System.out.println("proj3");
+                serverSpace.put(ServerFlag.CONNECTED, "");
+                // projection 4
+                System.out.println("proj4");
+                id = (int) serverSpace.get(new FormalField(Integer.class))[0];
+                System.out.println("Client got id: " + id);
+
+                // Shorthand
+                ActualField cToU = new ActualField("creation" + id + "user");
+                String uToC = "user" + id + "creation";
+
+                // projection 6
+                System.out.println("proj6");
+                serverSpace.put(uToC, action, roomName);
+                // projection 7
+                System.out.println("proj7");
+                String branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
+                System.out.println("Client branches: " + branch);
+                if (branch.equals("then")) {
+                    // projection 14
+                    System.out.println("proj14");
+                    response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                } else {
+                    // projection 17
+                    System.out.println("proj17");
+                    branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
+                    if (branch.equals("then")) {
+                        // projection 18
+                        System.out.println("proj18");
+                        response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                    } else {
+                        // projection 19
+                        System.out.println("proj19");
+                        response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                    }
+                }
+                // projection 20
+                System.out.println("proj20");
+                if (response[1] == ServerFlag.OK) {
+                    System.out.println("proj20then");
+                    connectToRoom((String) response[2]);
+                    connected();
                     break;
                 } else {
-                    System.out.println("Room not found");
+                    System.out.println("proj20else");
+                    notConnected();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+
+            } else {
+                System.out.println("proj2else");
+                // projection 4
+                notConnected();
             }
         }
-
-
-        return 1;
-    }
-
-//    public static void main(String[] args) {
+//        //get the ip for the server
+//        while (true) {
+//            System.out.print("Enter the server ip in the form host:gate");
 //
-//        try {
+//            hostPort = uri;
 //
-//
-//
-//            // Read user name from the console
-//            System.out.print("Enter your name: "); //TODO: This must be done through UI
-//            name = input.readLine();
-//
-//            // Choose to host a room or join one
-//            while (true) { //TODO: This must be done through UI
-//                System.out.print("type room-id or HOST:");
-//                String choice = input.readLine();
-//                try {
-//                    InitialMessage initialMessage;
-//                    if (!choice.equals("HOST")) {
-//                        initialMessage = InitialMessage.JOIN;
-//                        serverSpace.put(userID,choice,initialMessage);
-//                    }
-//                    else {
-//                        initialMessage = InitialMessage.HOST;
-//                        serverSpace.put(userID,"",initialMessage);
-//                    }
+//            // "tcp://localhost:9001/serverSpace?keep"
+//            uri = makeUri("serverSpace");
+//            System.out.println(uri);
 //
 //
-//                    //get the response from the server
-//                    Object[] response = serverSpace.get(new ActualField(userID),new FormalField(InitialMessage.class),new FormalField(String.class));
-//                    if (response[1].equals(InitialMessage.OK)) {
-//                        roomName = response[2].toString();
+//            try {
+//                serverSpace = new RemoteSpace(uri);
+//                break;
+//            } catch (Exception e) {
+//                ui.getAll(new FormalField(UiFlag.class),new FormalField(Object.class));
+//                System.out.println("Can't find server");
+//            }
+//        }
+//        // UI information
 //
-//                        // get ok from creationHandler
-//                        serverSpace.get(new ActualField(userID),new ActualField(InitialMessage.OK));
-//                        System.out.println(makeUri(roomName));
-//                        chat = new RemoteSpace(makeUri(roomName));
-//                        break;
-//                    } else {
-//                        System.out.println("Room not found");
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
+//        // request and get id from server
+//        serverSpace.put(ServerFlag.CONNECTED, "");
+//        userID = (int) serverSpace.get(new FormalField(Integer.class))[0];
+//        System.out.println("myID: " + userID);
+//
+//
+//        // Choose to host a room or join one
+//        while (true) {
+//            try {
+//                if (!tempRoom.equals("HOST")) {
+//                    System.out.println("JOINING");
+//                    serverSpace.put(userID, tempRoom, ServerFlag.JOIN);
+//                } else {
+//                    System.out.println("HOSTING");
+//                    serverSpace.put(userID, "", ServerFlag.HOST);
 //                }
+//
+//                //get the response from the server
+//                Object[] response = serverSpace.get(new ActualField(userID), new FormalField(ServerFlag.class), new FormalField(String.class));
+//                if (response[1].equals(ServerFlag.OK)) {
+//                    roomName = response[2].toString();
+//                    System.out.println(makeUri(roomName));
+//                    lobby = new RemoteSpace(makeUri(roomName));
+//                    System.out.println("Client connected to: " + makeUri(roomName));
+//                    updateMessage("CONNECTED");
+//                    break;
+//                } else {
+//                    System.out.println("Room not found");
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
 //            }
-//
-//            // In the game:
-//
-//            //TODO: Start a new thread that handel incomming messages.
-//
-//            while (true) { //TODO: This must handel both puttting chat messages or drawing on the canvas.
-//                String message = input.readLine();
-//                chat.put(name, message);
-//            }
-//
-//
-//        } catch (UnknownHostException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
 //        }
 //
-//    }
+//
+            return 1;
+
+    }
+
+    private void notConnected() throws InterruptedException {
+        updateMessage("NOTCONNECTED");
+        ui.getAll(new FormalField(UiFlag.class),new FormalField(Object.class));
+    }
+
+    private void connected() {
+        updateMessage("CONNECTED");
+    }
+
+    private void connectToRoom(String o) throws IOException {
+        lobby = new RemoteSpace(makeUri(o));
+    }
+
+    private boolean isConnected() {
+        return connection;
+    }
+
+    private void connect() {
+        try {
+            serverSpace = new RemoteSpace(makeUri("serverSpace"));
+            connection = true;
+        } catch (Exception e) {
+            connection = false;
+            System.out.println("Can't find server");
+        }
+    }
 
     private String makeUri(String identifier) {
         return "tcp://" + hostPort + "/" + identifier + "?keep";
     }
 
 }
+
