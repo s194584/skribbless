@@ -8,7 +8,6 @@
 # ui.(ACTION,joinhost) -> usertask.action(ACTION,ServerFlag);
 
 connect()@usertask	// if an exception is caught, go to start
-
 if isConnected()@usertask then
     usertask.(CONNECTED,"") -> server.message(ServerFlag,String)
     server.(generateId()) -> usertask.id(int)
@@ -21,7 +20,7 @@ if isConnected()@usertask then
         room.(roomName,ROOMOK) -> creationHandler.(message[1],ServerFlag)
         creationHandler.(SETROOM,roomName[1]) -> server.message(ServerFlag,String)
         setRoom()@server
-        creationHandler.(id,OK,roomName[1]) -> usertask.response(int,ServerFlag,String)
+        creationHandler.(OK,roomName[1]) -> usertask.response(ServerFlag,String)
     else
         creationHandler.(CHECKROOM,message[2]) -> server.message(ServerFlag,String)
         server.(message[1],checkRoom(data(message[1]))) -> creationHandler.serverResponse(message[2],boolean)

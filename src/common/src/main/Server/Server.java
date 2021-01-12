@@ -103,7 +103,6 @@ class CreationHandler implements Runnable {
         System.out.println(cToU);
 
         try {
-            System.out.println("proj2then");
             // projection 6
             System.out.println("proj6");
             message = space.get(uToC, new FormalField(ServerFlag.class), new FormalField(String.class));

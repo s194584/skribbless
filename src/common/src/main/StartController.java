@@ -67,6 +67,8 @@ public class StartController {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                    case "NOTCONNECTED":
+                        label1.setText(tNew);
                         break;
                 }
             }

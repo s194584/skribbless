@@ -38,78 +38,81 @@ public class UserTask extends Task {
 
     @Override
     protected Integer call() throws Exception {
-        if (isCancelled()) {
-            return 1;
-        }
-
-        // Information from ui
-        hostPort = ui.get(new ActualField(UiFlag.IP), new FormalField(String.class))[1].toString();
-        name = (String) ui.get(new ActualField(UiFlag.NAME), new FormalField(String.class))[1];
-        String roomName = (String) ui.get(new ActualField(UiFlag.ROOMNAME), new FormalField(String.class))[1];
-        ServerFlag action = (ServerFlag) ui.get(new ActualField(UiFlag.ACTION),new FormalField(ServerFlag.class))[1];
-
-        // Helper
-        Object[] response;
-
-        // projection 1
-        System.out.println("proj1");
-        connect();
-        // projection 2
-        if (isConnected()) {
-            System.out.println("proj2then");
-            System.out.println("Client connected");
-            // projection 3
-            System.out.println("proj3");
-            serverSpace.put(ServerFlag.CONNECTED, "");
-            // projection 4
-            System.out.println("proj4");
-            id = (int) serverSpace.get(new FormalField(Integer.class))[0];
-            System.out.println("Client got id: "+id);
-
-            // Shorthand
-            ActualField cToU = new ActualField("creation"+id+"user");
-            String uToC = "user"+id+"creation";
-
-            // projection 6
-            System.out.println("proj6");
-            serverSpace.put(uToC, action, roomName);
-            // projection 7
-            System.out.println("proj7");
-            String branch = (String) serverSpace.get(cToU,new FormalField(String.class))[1];
-            System.out.println("Client branches: "+branch);
-            if (branch.equals("then")) {
-                // projection 14
-                System.out.println("proj14");
-                response = serverSpace.get(cToU,new FormalField(ServerFlag.class), new FormalField(String.class));
-            } else {
-                // projection 17
-                System.out.println("proj17");
-                branch = (String) serverSpace.get(cToU,new FormalField(String.class))[1];
-                if (branch == "then") {
-                    // projection 18
-                    System.out.println("proj18");
-                    response = serverSpace.get(cToU,new FormalField(ServerFlag.class), new FormalField(String.class));
-                } else {
-                    // projection 19
-                    System.out.println("proj19");
-                    response = serverSpace.get(cToU,new FormalField(ServerFlag.class), new FormalField(String.class));
-                }
+        while (true) {
+            if (isCancelled()) {
+                return 1;
             }
-            // projection 20
-            System.out.println("proj20");
-            if (response[1] == ServerFlag.OK) {
-                System.out.println("proj20then");
-                connectToRoom((String) response[2]);
-                connected();
+
+            // Information from ui
+            hostPort = ui.get(new ActualField(UiFlag.IP), new FormalField(String.class))[1].toString();
+            name = (String) ui.get(new ActualField(UiFlag.NAME), new FormalField(String.class))[1];
+            String roomName = (String) ui.get(new ActualField(UiFlag.ROOMNAME), new FormalField(String.class))[1];
+            ServerFlag action = (ServerFlag) ui.get(new ActualField(UiFlag.ACTION), new FormalField(ServerFlag.class))[1];
+
+            // Helper
+            Object[] response;
+
+            // projection 1
+            System.out.println("proj1");
+            connect();
+            // projection 2
+            if (isConnected()) {
+                System.out.println("proj2then");
+                System.out.println("Client connected");
+                // projection 3
+                System.out.println("proj3");
+                serverSpace.put(ServerFlag.CONNECTED, "");
+                // projection 4
+                System.out.println("proj4");
+                id = (int) serverSpace.get(new FormalField(Integer.class))[0];
+                System.out.println("Client got id: " + id);
+
+                // Shorthand
+                ActualField cToU = new ActualField("creation" + id + "user");
+                String uToC = "user" + id + "creation";
+
+                // projection 6
+                System.out.println("proj6");
+                serverSpace.put(uToC, action, roomName);
+                // projection 7
+                System.out.println("proj7");
+                String branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
+                System.out.println("Client branches: " + branch);
+                if (branch.equals("then")) {
+                    // projection 14
+                    System.out.println("proj14");
+                    response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                } else {
+                    // projection 17
+                    System.out.println("proj17");
+                    branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
+                    if (branch.equals("then")) {
+                        // projection 18
+                        System.out.println("proj18");
+                        response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                    } else {
+                        // projection 19
+                        System.out.println("proj19");
+                        response = serverSpace.get(cToU, new FormalField(ServerFlag.class), new FormalField(String.class));
+                    }
+                }
+                // projection 20
+                System.out.println("proj20");
+                if (response[1] == ServerFlag.OK) {
+                    System.out.println("proj20then");
+                    connectToRoom((String) response[2]);
+                    connected();
+                    break;
+                } else {
+                    System.out.println("proj20else");
+                    notConnected();
+                }
+
             } else {
-                System.out.println("proj20else");
+                System.out.println("proj2else");
+                // projection 4
                 notConnected();
             }
-
-        } else {
-            System.out.println("proj2else");
-            // projection 4
-            reset();
         }
 //        //get the ip for the server
 //        while (true) {
@@ -167,11 +170,13 @@ public class UserTask extends Task {
 //        }
 //
 //
-        return 1;
+            return 1;
+
     }
 
-    private void notConnected() {
+    private void notConnected() throws InterruptedException {
         updateMessage("NOTCONNECTED");
+        ui.getAll(new FormalField(UiFlag.class),new FormalField(Object.class));
     }
 
     private void connected() {
@@ -184,10 +189,6 @@ public class UserTask extends Task {
 
     private boolean isConnected() {
         return connection;
-    }
-
-    private void reset() throws InterruptedException {
-        ui.getAll(new FormalField(UiFlag.class),new FormalField(Object.class));
     }
 
     private void connect() {

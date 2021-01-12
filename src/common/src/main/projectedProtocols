@@ -53,6 +53,7 @@ if branch == "then" then
     // projection 7
     branch = channel(creationHandler,server).get(String)
     if branch == "then" then
+        channel(creationHandler,server).put("then")
         // projection 8
         message = channel(creationHandler,server).get(ServerFlag,String)
         // projection 9 // SERVER has chosen message GENERATEROOM
@@ -62,6 +63,7 @@ if branch == "then" then
         // projection 13
         setRoom()
     else
+        channel(creationHandler,server).put("else")
         // projection 15
         message = channel(creationHandler,server).get(ServerFlag,String)
         // projection 16 //SERVER has chosen CHECK ROOM
@@ -80,7 +82,6 @@ if branch == "then" then
     if message[0] == HOST then
         channel(creationHandler,server).put("then")
         channel(creationHandler,userTask).put("then")
-        channel(creationHandler,room).put("then")
         // projection 8
         channel(creationHandler,server).put(GENERATEROOM,"")
         // projection 9
@@ -96,7 +97,6 @@ if branch == "then" then
     else
         channel(creationHandler,server).put("else")
         channel(creationHandler,userTask).put("else")
-        channel(creationHandler,room).put("else")
         // projection 15
         channel(creationHandler,server).put(CHECKROOM,message[1])
         // projection 16

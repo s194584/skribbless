@@ -97,7 +97,9 @@ public class GameController {
         userListView.setCellFactory(new Callback<ListView, ListCell>() {
             @Override
             public ListCell call(ListView listView) {
-                return new UserListViewCell();
+                UserListViewCell ulvc = new UserListViewCell();
+                ulvc.prefWidthProperty().bind(userListView.widthProperty().multiply(0.95));
+                return ulvc;
             }
         });
 
