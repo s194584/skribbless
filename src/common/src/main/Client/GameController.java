@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListCell;
@@ -23,6 +24,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
@@ -65,9 +67,10 @@ public class GameController {
     @FXML
     public void initialize() {
         GameUserTask gut = new GameUserTask(taskInfo, ui);
-        root.getChildren().remove(0);
-        root.getChildren().add(gamePane);
-        root.getScene().getWindow().sizeToScene();
+        ((Stage) root.getScene().getWindow()).setScene(new Scene(gamePane));
+//        root.getChildren().remove(0);
+//        root.getChildren().add(gamePane);
+//        root.getScene().getWindow().sizeToScene();
 
         sop.bind(gut.valueProperty());
         ssp.bind(gut.messageProperty());

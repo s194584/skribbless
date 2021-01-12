@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.TextFlow?>
 
-<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="723.0" prefWidth="928.0" vgap="4.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="723.0" prefWidth="928.0" vgap="4.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
   <columnConstraints>
     <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="115.0" percentWidth="22.0" prefWidth="115.0" />
     <ColumnConstraints hgrow="SOMETIMES" minWidth="253.0" prefWidth="326.0" />
@@ -29,7 +29,7 @@
          <children>
             <Label fx:id="timeLable" text="TIME" />
             <Label fx:id="curretnWordLable" text="WORD" />
-            <Button fx:id="tool1Button" mnemonicParsing="false" text="FUNCTIONS" />
+            <Button fx:id="tool1Button" contentDisplay="CENTER" mnemonicParsing="false" text="FUNCTIONS" />
          </children>
          <GridPane.margin>
             <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
@@ -41,7 +41,7 @@
          </GridPane.margin></ListView>
       <VBox GridPane.columnIndex="1" GridPane.rowIndex="2">
          <children>
-            <TextFlow fx:id="chatTextFlow" prefHeight="300.0" prefWidth="300.0" style="-fx-background-color: lightgrey;" />
+            <TextFlow fx:id="chatTextFlow" maxHeight="-Infinity" prefHeight="300.0" prefWidth="300.0" style="-fx-background-color: lightgrey;" />
             <TextField fx:id="chatTextField" promptText="Enter messege" />
          </children>
       </VBox>
