@@ -19,7 +19,7 @@ public class GameUserTask extends Task {
     Space ui;
 
     public GameUserTask(TaskInfo ti, Space ui) {
-        user = new User(ti.getName() + ":D", ti.getName(), 0);
+        user = new User(ti.getName() + ":D", ti.getName(), ti.getUserID(), 0);
         userId = ti.getUserID();
         lobby = ti.getLobby();
         hostPort = ti.getHostPort();
@@ -34,7 +34,6 @@ public class GameUserTask extends Task {
         System.out.println("Got response from room:" + roomResponse[1] + " isleader: " + roomResponse[2]);
         inbox = new RemoteSpace(makeUri(roomResponse[1].toString()));
         this.isLeader = (boolean) roomResponse[2];
-
         //send isLeader to GameController
         updateMessage("" + isLeader);
 
@@ -66,6 +65,8 @@ public class GameUserTask extends Task {
     private String makeUri(String identifier) {
         return "tcp://" + hostPort + "/" + identifier + "?keep";
     }
+
+
 }
 
 class UiInbox implements Runnable {

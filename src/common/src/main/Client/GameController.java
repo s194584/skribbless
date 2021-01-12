@@ -18,6 +18,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -45,6 +46,8 @@ public class GameController {
     TextFlow chatTextFlow;
     @FXML
     TextField chatTextField;
+    @FXML
+    ScrollPane chatScrollPane;
 
 
     private ObservableList<User> users = FXCollections.observableArrayList();
@@ -146,8 +149,13 @@ public class GameController {
     }
 
     private void updateChat(TextInfo textInfo) {
+        if(chatTextFlow.getChildren().size()>3){
+            chatTextFlow.getChildren().remove(0,2);
+            chatScrollPane.setVvalue(1.0d);
+        }
         chatTextFlow.getChildren().add(textInfo.getText());
         chatTextFlow.getChildren().add(new Text(System.lineSeparator()));
+        chatScrollPane.setVvalue(1.0d);
     }
 
     private void removePlayer(User user) {

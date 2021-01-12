@@ -77,8 +77,9 @@ public class Room implements Runnable {
                         break;
                     case DISCONNECTED:
                         // Remove inbox from list and repo.
+                        System.out.println("User disconnected");
                         removePlayer(playerID);
-                        users.remove((User) data);
+                        users.remove(data);
 
                         // Select new leader if leader left.
                         //TODO: Select new leader if leader left.
