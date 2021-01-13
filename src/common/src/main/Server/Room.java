@@ -8,10 +8,7 @@ import common.src.main.Client.User;
 import javafx.scene.paint.Color;
 import org.jspace.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Room implements Runnable {
     protected SpaceRepository repo;
@@ -22,12 +19,14 @@ public class Room implements Runnable {
     protected String currentWord = "notnull"; //The word which is being drawn
     protected int numberOfRounds;
     protected int turnTime;
-    protected int turnNumber = 0;
+    protected int turnNumber = -1;
 
     protected int playerAmount = 0;
+    protected int playerAmountGuessed = 0;
     protected ArrayList<User> users = new ArrayList<User>();
     protected HashMap<Integer, Space> playerInboxes = new HashMap<>();
     protected HashMap<Integer, String> playerNames = new HashMap<>(); //This is used for messages in the chat.
+    protected HashMap<Integer, Boolean> playerGuessed = new HashMap<>();
 
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
@@ -55,6 +54,8 @@ public class Room implements Runnable {
             Template initialMessageTemplate = new Template(new FormalField(String.class),
                     new FormalField(RoomFlag.class));  //Get name,enum
 
+//
+
             while (true) {
                 Object[] message = lobby.get(new FormalField(RoomFlag.class),
                         new FormalField(Integer.class),
@@ -63,7 +64,6 @@ public class Room implements Runnable {
                 Object data = message[2];
 
                 System.out.println(roomName + " got message: " + message[0]);
-
                 switch ((RoomFlag) message[0]) {
                     case CONNECTED:
                         User user = ((User) data);
@@ -71,6 +71,7 @@ public class Room implements Runnable {
                         boolean isLeader = playerAmount == 0;
                         addplayer(playerID);
                         playerNames.put(playerID, user.getName());
+                        playerGuessed.put(playerID,false);
                         lobby.put(playerID, createName(playerID), isLeader);
                         System.out.println("User: " + message[1].toString() + " has connected");
 
@@ -93,17 +94,29 @@ public class Room implements Runnable {
                         broadcastToInboxes(RoomResponseFlag.PLAYERREMOVED, data);
                         break;
                     case CANVAS:
+                        broadcastExcept(RoomResponseFlag.CANVAS, data, playerID);
                         break;
                     case MESSAGE:
                         boolean correct = filterMessage(data);
-                        if (correct) {
+                        if (correct&&!playerGuessed.get(playerID)) {
+                            playerGuessed.put(playerID,true);
+                            playerAmountGuessed++;
                             TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
                             TextInfo textInfoSelf = createTextToSelf(data, playerNames.get(playerID));
                             broadcastExcept(RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
                             broadcastToOne(RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
-                        } else {
+                        } else if(!correct){
                             TextInfo textInfo = createText(data, playerNames.get(playerID));
                             broadcastToInboxes(RoomResponseFlag.MESSAGE, textInfo);
+                        }
+
+                        // Reset guesses when all have guessed the word
+                        if(playerAmountGuessed==playerAmount-1){
+                            for (Integer k:playerGuessed.keySet()) {
+                                playerGuessed.put(k,false);
+                            }
+                            playerAmountGuessed = 0;
+                            nextPlayer();
                         }
                         break;
                     case GAMESTART:
@@ -119,9 +132,8 @@ public class Room implements Runnable {
                         currentWord = data.toString();
                         //TODO: Start timer
 
-
                         //TODO: Send startTurn tag with length of word. and begin turns in gamecontrollers.
-                        broadcastToInboxes(RoomResponseFlag.STARTTURN,currentWord.length());
+                        broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
                         break;
                 }
 
@@ -135,18 +147,19 @@ public class Room implements Runnable {
     }
 
     private void nextPlayer() {
+        System.out.println("Moving to next player...");
         if (numberOfRounds == 0) {
             return;
         }
 
         if (users.size() == turnNumber) {
             numberOfRounds--;
-            turnNumber = 0;
+            turnNumber = -1;
         }
 
+        turnNumber++;
         String possibleWords[] = generateWords();
         broadcastToOne(RoomResponseFlag.CHOOSEWORD,possibleWords,(users.get(turnNumber)).getId());
-        turnNumber++;
     }
 
     private String[] generateWords() {

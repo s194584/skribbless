@@ -26,7 +26,6 @@ public class GameUserTask extends Task {
         this.ui = ui;
     }
 
-
     @Override
     protected Integer call() throws Exception {
         lobby.put(RoomFlag.CONNECTED, userId, user);
@@ -48,6 +47,9 @@ public class GameUserTask extends Task {
             }
 
             Object[] message = inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class));
+            if(message[0] == RoomResponseFlag.STARTTURN){
+                System.out.println(message[1]);
+            }
             updateValue(message);
         }
     }

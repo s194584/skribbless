@@ -1,6 +1,7 @@
 package common.src.main.Client;
 
 
+import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -16,10 +17,15 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -46,11 +52,19 @@ public class GameController {
     @FXML
     ScrollPane chatScrollPane;
     @FXML
+    Label currentWordLabel;
+    @FXML
     Label timeLabel;
     @FXML
     Pane canvasPaneRoot;
     @FXML
     Label roundsLeftLabel;
+    @FXML
+    Canvas canvas;
+
+    GraphicsContext gc;
+
+    double prevX,prevY;
 
 
     private ObservableList<User> users = FXCollections.observableArrayList();
@@ -60,6 +74,7 @@ public class GameController {
     private SimpleBooleanProperty isLeader;
     private boolean gameStarted = false;
     private Space ui;
+    private boolean dragging;
     private Parent chooseWordPane;
     private ChooseWordController cwCon;
     private boolean myTurn;
@@ -76,12 +91,20 @@ public class GameController {
 
     @FXML
     public void initialize() {
+        // Initial window setup
+        ((Stage) root.getScene().getWindow()).setTitle(taskInfo.getHostPort());
+        ((Stage) root.getScene().getWindow()).setScene(new Scene(gamePane));
+        userListView.setMouseTransparent(true);
+        userListView.setFocusTraversable(false);
+
+        // Starts readies the Game thread
+        GameUserTask gut = new GameUserTask(taskInfo, ui);
+
         //make chooseWord loader:
         setupChooseWord(playerID);
+        setupCanvas();
 
 
-        GameUserTask gut = new GameUserTask(taskInfo, ui);
-        ((Stage) root.getScene().getWindow()).setScene(new Scene(gamePane));
 
         sop.bind(gut.valueProperty());
         ssp.bind(gut.messageProperty());
@@ -90,38 +113,44 @@ public class GameController {
             @Override
             public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
                 Object[] message = (Object[]) newValue;
+                RoomResponseFlag flag = (RoomResponseFlag) message[0];
+                Object data = message[1];
+                System.out.println("GameController got flag: " + flag);
 
-                System.out.println("GameController got flag: " + message[0]);
-
-                switch ((RoomResponseFlag) message[0]) {
+                switch (flag) {
                     case NEWPLAYER:
-                        addNewPlayer((User) message[1]);
+                        addNewPlayer((User) data);
                         break;
                     case PLAYERREMOVED:
-                        removePlayer((User) message[1]);
+                        removePlayer((User) data);
                         break;
                     case MESSAGE:
-                        updateChat((TextInfo) message[1]);
+                        updateChat((TextInfo) data);
                         break;
                     case CANVAS:
-                        updateCanvas((GraphicsContext) message[1]); //TODO: does this work?
+                        updateCanvas((MouseInfo) data); //TODO: does this work?
                         break;
                     case GAMESTART:
-                        int gameInfo[] = (int[]) message[1];
+                        int gameInfo[] = (int[]) data;
                         roundsLeftLabel.setText("" + gameInfo[0]);
                         timeLabel.setText(gameInfo[1] + " s");
-
                         if (isLeader.getValue()) {
                             canvasPaneRoot.getChildren().clear();
                         }
                         break;
                     case CHOOSEWORD:
-                        String wordsInfo[] = (String[]) message[1];
+                        String wordsInfo[] = (String[]) data;
                         showChooseWord(wordsInfo);
-                        myTurn = true;
                         break;
                     case STARTTURN:
-                        
+                        int wordAndId[] = (int[]) data;
+                        myTurn = wordAndId[1]==playerID;
+                        if(!myTurn){
+                            currentWordLabel.setText("_ ".repeat(wordAndId[0]));
+                        }
+                        canvasPaneRoot.getChildren().clear();
+                        gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
+                        canvasPaneRoot.getChildren().add(canvas);
                         break;
                     default:
                         break;
@@ -198,6 +227,19 @@ public class GameController {
         th.start();
     }
 
+    private void setupCanvas() {
+        canvas = new Canvas();
+        canvas.setWidth(814);
+        canvas.setHeight(436);
+        canvas.setOnMousePressed(this::updateInitialPosition);
+        canvas.setOnMouseDragged(this::updateStroke);
+        canvas.setOnMouseReleased(this::releaseTool);
+        gc = canvas.getGraphicsContext2D();
+    }
+
+    private void updateCanvas(MouseInfo mi) {
+        draw(mi.getX1(),mi.getY1(),mi.getX2(),mi.getY2(),mi.getCt());
+    }
     private void setupChooseWord(int playerID) {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/chooseWord.fxml"));
         cwCon = new ChooseWordController();
@@ -213,7 +255,9 @@ public class GameController {
             @Override
             public void handle(ActionEvent actionEvent) {
                 try {
-                    ui.put(RoomFlag.WORDCHOOSEN,playerID,((Button) actionEvent.getSource()).getText());
+                    String tmp = ((Button) actionEvent.getSource()).getText();
+                    ui.put(RoomFlag.WORDCHOOSEN,playerID,tmp);
+                    currentWordLabel.setText(tmp);
                     canvasPaneRoot.getChildren().clear();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -230,8 +274,12 @@ public class GameController {
         canvasPaneRoot.getChildren().add(chooseWordPane);
     }
 
-    private void updateCanvas(GraphicsContext graphicsContext) {
-
+    private void draw(double x1, double y1, double x2, double y2, CanvasTool ct) {
+        switch (ct){
+            case PENCIL:
+                gc.strokeLine(x1,y1,x2,y2);
+                break;
+        }
     }
 
     private void updateChat(TextInfo textInfo) {
@@ -250,6 +298,41 @@ public class GameController {
 
     private void addNewPlayer(User user) {
         users.add(user);
+    }
+
+    @FXML
+    void releaseTool(MouseEvent event) {
+        dragging = false;
+    }
+
+    @FXML
+    void updateInitialPosition(MouseEvent event) {
+        if (myTurn) {
+            prevX = event.getX();
+            prevY = event.getY();
+            dragging = true;
+        }
+    }
+
+    @FXML
+    void updateStroke(MouseEvent event) {
+        if (!dragging){
+            return;
+        }
+        double x = event.getX();
+        double y = event.getY();
+        try {
+            if (Math.abs(x-prevX)<10&&Math.abs(y-prevY)<10){
+                return;
+            }
+            // TODO: Maybe do some chunking, if more disappears under transport
+            gc.strokeLine(prevX,prevY,event.getX(),event.getY());
+            ui.put(RoomFlag.CANVAS,playerID,new MouseInfo(prevX,prevY,x,y, CanvasTool.PENCIL));
+            prevX = event.getX();
+            prevY = event.getY();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
