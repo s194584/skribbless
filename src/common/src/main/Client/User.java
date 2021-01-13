@@ -14,6 +14,10 @@ public class User {
         this.score = score;
     }
 
+    public void setLeader(boolean leader) {
+        this.leader = leader;
+    }
+
     public String getCharacter() {
         return character;
     }

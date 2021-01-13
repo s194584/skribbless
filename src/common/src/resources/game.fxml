@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.TextFlow?>
 
-<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="720.0" prefWidth="1080.0" vgap="4.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="720.0" prefWidth="1080.0" vgap="4.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
   <columnConstraints>
     <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="115.0" percentWidth="22.0" prefWidth="115.0" />
     <ColumnConstraints hgrow="SOMETIMES" minWidth="253.0" prefWidth="326.0" />
@@ -28,7 +28,7 @@
       <Button fx:id="quitButton" mnemonicParsing="false" style="-fx-background-color: salmon;" text="&lt;-" />
       <HBox alignment="CENTER_LEFT" prefHeight="39.0" prefWidth="247.0" spacing="250.0" GridPane.columnIndex="1">
          <children>
-            <Label fx:id="timeLable" text="TIME" />
+            <Label fx:id="timeLabel" text="TIME" />
             <Label fx:id="curretnWordLable" text="WORD" />
             <Button fx:id="tool1Button" contentDisplay="CENTER" mnemonicParsing="false" text="FUNCTIONS" />
          </children>
@@ -50,11 +50,13 @@
             <TextField fx:id="chatTextField" promptText="Enter messege" />
          </children>
       </VBox>
-      <Pane fx:id="canvasPane" GridPane.columnIndex="1" GridPane.rowIndex="1">
-         <padding>
-            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-         </padding>
-      </Pane>
+      <Pane fx:id="canvasPaneRoot" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <HBox alignment="CENTER" GridPane.rowIndex="2">
+         <children>
+            <Label text="Rounds Left: " />
+            <Label fx:id="roundsLeftLabel" text="#" />
+         </children>
+      </HBox>
    </children>
    <opaqueInsets>
       <Insets />

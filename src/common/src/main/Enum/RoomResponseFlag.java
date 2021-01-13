@@ -4,5 +4,8 @@ public enum RoomResponseFlag {
     NEWPLAYER,
     PLAYERREMOVED,
     MESSAGE,
-    CANVAS
+    CANVAS,
+    GAMESTART,
+    CHOOSEWORD,
+    STARTTURN
 }

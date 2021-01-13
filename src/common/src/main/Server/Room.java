@@ -20,6 +20,9 @@ public class Room implements Runnable {
 
     protected String roomName;
     protected String currentWord = "notnull"; //The word which is being drawn
+    protected int numberOfRounds;
+    protected int turnTime;
+    protected int turnNumber = 0;
 
     protected int playerAmount = 0;
     protected ArrayList<User> users = new ArrayList<User>();
@@ -63,16 +66,18 @@ public class Room implements Runnable {
 
                 switch ((RoomFlag) message[0]) {
                     case CONNECTED:
+                        User user = ((User) data);
                         //Generate inboxSpace and sent connection string, back to user. Add user to list
                         boolean isLeader = playerAmount == 0;
                         addplayer(playerID);
-                        playerNames.put(playerID, ((User) data).getName());
+                        playerNames.put(playerID, user.getName());
                         lobby.put(playerID, createName(playerID), isLeader);
                         System.out.println("User: " + message[1].toString() + " has connected");
 
                         //Broadcast arrival of new player to other players:
                         broadcastUsersToInbox(RoomResponseFlag.NEWPLAYER, playerInboxes.get(playerID));
-                        users.add((User) data); //Add user after to ensure no duplicates
+                        user.setLeader(isLeader);
+                        users.add(user); //Add user after to ensure no duplicates
                         broadcastToInboxes(RoomResponseFlag.NEWPLAYER, data);
                         break;
                     case DISCONNECTED:
@@ -101,6 +106,23 @@ public class Room implements Runnable {
                             broadcastToInboxes(RoomResponseFlag.MESSAGE, textInfo);
                         }
                         break;
+                    case GAMESTART:
+                        int gameOptions[] = (int[]) data;
+                        numberOfRounds = gameOptions[0];
+                        turnTime = gameOptions[1];
+
+                        broadcastToInboxes(RoomResponseFlag.GAMESTART,gameOptions);
+
+                        nextPlayer();
+                        break;
+                    case WORDCHOOSEN:
+                        currentWord = data.toString();
+                        //TODO: Start timer
+
+
+                        //TODO: Send startTurn tag with length of word. and begin turns in gamecontrollers.
+                        broadcastToInboxes(RoomResponseFlag.STARTTURN,currentWord.length());
+                        break;
                 }
 
 
@@ -110,6 +132,25 @@ public class Room implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private void nextPlayer() {
+        if (numberOfRounds == 0) {
+            return;
+        }
+
+        if (users.size() == turnNumber) {
+            numberOfRounds--;
+            turnNumber = 0;
+        }
+
+        String possibleWords[] = generateWords();
+        broadcastToOne(RoomResponseFlag.CHOOSEWORD,possibleWords,(users.get(turnNumber)).getId());
+        turnNumber++;
+    }
+
+    private String[] generateWords() {
+        return WordUtil.generateWords();
     }
 
     private void broadcastToOne(RoomResponseFlag flag, Object data, int playerID) {

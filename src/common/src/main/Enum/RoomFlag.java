@@ -4,5 +4,7 @@ public enum RoomFlag {
     CONNECTED,
     DISCONNECTED,
     MESSAGE,
-    CANVAS
+    CANVAS,
+    GAMESTART,
+    WORDCHOOSEN
 }

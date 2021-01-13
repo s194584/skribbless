@@ -10,16 +10,14 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
@@ -30,11 +28,10 @@ import javafx.util.Callback;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
-import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class GameController {
+
     private Pane root;
     private TaskInfo taskInfo;
     private int playerID;
@@ -48,6 +45,12 @@ public class GameController {
     TextField chatTextField;
     @FXML
     ScrollPane chatScrollPane;
+    @FXML
+    Label timeLabel;
+    @FXML
+    Pane canvasPaneRoot;
+    @FXML
+    Label roundsLeftLabel;
 
 
     private ObservableList<User> users = FXCollections.observableArrayList();
@@ -55,7 +58,11 @@ public class GameController {
     private SimpleObjectProperty sop;
     private SimpleStringProperty ssp;
     private SimpleBooleanProperty isLeader;
+    private boolean gameStarted = false;
     private Space ui;
+    private Parent chooseWordPane;
+    private ChooseWordController cwCon;
+    private boolean myTurn;
 
     public GameController(Pane r, TaskInfo ti) {
         root = r;
@@ -69,11 +76,12 @@ public class GameController {
 
     @FXML
     public void initialize() {
+        //make chooseWord loader:
+        setupChooseWord(playerID);
+
+
         GameUserTask gut = new GameUserTask(taskInfo, ui);
         ((Stage) root.getScene().getWindow()).setScene(new Scene(gamePane));
-//        root.getChildren().remove(0);
-//        root.getChildren().add(gamePane);
-//        root.getScene().getWindow().sizeToScene();
 
         sop.bind(gut.valueProperty());
         ssp.bind(gut.messageProperty());
@@ -98,6 +106,23 @@ public class GameController {
                     case CANVAS:
                         updateCanvas((GraphicsContext) message[1]); //TODO: does this work?
                         break;
+                    case GAMESTART:
+                        int gameInfo[] = (int[]) message[1];
+                        roundsLeftLabel.setText("" + gameInfo[0]);
+                        timeLabel.setText(gameInfo[1] + " s");
+
+                        if (isLeader.getValue()) {
+                            canvasPaneRoot.getChildren().clear();
+                        }
+                        break;
+                    case CHOOSEWORD:
+                        String wordsInfo[] = (String[]) message[1];
+                        showChooseWord(wordsInfo);
+                        myTurn = true;
+                        break;
+                    case STARTTURN:
+                        
+                        break;
                     default:
                         break;
                 }
@@ -109,6 +134,35 @@ public class GameController {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String oldString, String newString) {
                 isLeader.set(newString.equals("" + true));
+                if (!gameStarted && isLeader.getValue()) { //TODO: This logic might need to be somewhere else. since we don't acces it except in the begining.
+                    System.out.println("GameController setting gameOptions");
+
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
+                    GameOptionsController gameOpCon = new GameOptionsController();
+                    fxmlLoader.setController(gameOpCon);
+
+                    try {
+                        canvasPaneRoot.getChildren().add(fxmlLoader.load());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    gameOpCon.startGameButton.setOnAction(new EventHandler<ActionEvent>() {
+                        @Override
+                        public void handle(ActionEvent actionEvent) {
+                            try {
+                                int data[] = {(int) gameOpCon.roundsComboBox.getValue(),(int) gameOpCon.timeComboBox.getValue()};
+                                ui.put(RoomFlag.GAMESTART,playerID,data);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                } else { //TODO: Game is started
+
+                }
             }
         });
 
@@ -142,6 +196,38 @@ public class GameController {
         Thread th = new Thread(gut);
         th.setDaemon(true);
         th.start();
+    }
+
+    private void setupChooseWord(int playerID) {
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/chooseWord.fxml"));
+        cwCon = new ChooseWordController();
+        fxmlLoader.setController(cwCon);
+
+        try {
+            chooseWordPane = fxmlLoader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        EventHandler<ActionEvent> eventHandler = new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    ui.put(RoomFlag.WORDCHOOSEN,playerID,((Button) actionEvent.getSource()).getText());
+                    canvasPaneRoot.getChildren().clear();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        cwCon.setEventHandler(eventHandler);
+    }
+
+    private void showChooseWord(String[] wordsInfo) {
+        cwCon.setupButtons(wordsInfo);
+        canvasPaneRoot.getChildren().clear();
+        canvasPaneRoot.getChildren().add(chooseWordPane);
     }
 
     private void updateCanvas(GraphicsContext graphicsContext) {
