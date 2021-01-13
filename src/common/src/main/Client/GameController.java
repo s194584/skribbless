@@ -1,14 +1,13 @@
 package common.src.main.Client;
 
 
+import common.src.main.Enum.CanvasColor;
 import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -24,18 +23,20 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class GameController {
 
@@ -57,6 +58,8 @@ public class GameController {
     @FXML
     Label timeLabel;
     @FXML
+    ComboBox colorComboBox;
+    @FXML
     Pane canvasPaneRoot;
     @FXML
     Label roundsLeftLabel;
@@ -67,8 +70,9 @@ public class GameController {
 
     double prevX,prevY;
 
-
+    private ObservableList<String> colorsList;
     private ObservableList<User> users = FXCollections.observableArrayList();
+    private HashMap<CanvasColor,String> colorMap = new HashMap<>();
 
     private SimpleObjectProperty sop;
     private SimpleStringProperty ssp;
@@ -107,6 +111,11 @@ public class GameController {
         setupChooseWord(playerID);
         setupCanvas();
 
+        //Setting up color box.
+        setupColorMap();
+        setupColorsList();
+        colorComboBox.setItems(colorsList);
+        colorComboBox.setValue(colorsList.get(0));
 
 
         sop.bind(gut.valueProperty());
@@ -216,6 +225,26 @@ public class GameController {
         th.start();
     }
 
+    private void setupColorMap() {
+        colorMap.put(CanvasColor.BLACK, Color.BLACK.toString());
+        colorMap.put(CanvasColor.RED, Color.RED.toString());
+        colorMap.put(CanvasColor.BLUE, Color.BLUE.toString());
+        colorMap.put(CanvasColor.YELLOW, Color.YELLOW.toString());
+        colorMap.put(CanvasColor.GREEN, Color.GREEN.toString());
+        colorMap.put(CanvasColor.BROWN, Color.BROWN.toString());
+        colorMap.put(CanvasColor.WHITE, Color.WHITE.toString());
+    }
+
+    private void setupColorsList() {
+        String[] tmp = new String[CanvasColor.values().length];
+        int count = 0;
+        for (CanvasColor cv: CanvasColor.values()) {
+           tmp[count] = cv.toString();
+           count++;
+        }
+        colorsList = FXCollections.observableArrayList(tmp);
+    }
+
     private void setupCanvas() {
         canvas = new Canvas();
         canvas.setWidth(814);
@@ -227,7 +256,7 @@ public class GameController {
     }
 
     private void updateCanvas(MouseInfo mi) {
-        draw(mi.getX1(),mi.getY1(),mi.getX2(),mi.getY2(),mi.getCt());
+        draw(mi.getX1(),mi.getY1(),mi.getX2(),mi.getY2(),mi.getCt(),mi.getCc());
     }
     private void setupChooseWord(int playerID) {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/chooseWord.fxml"));
@@ -260,7 +289,8 @@ public class GameController {
         canvasPaneRoot.getChildren().add(chooseWordPane);
     }
 
-    private void draw(double x1, double y1, double x2, double y2, CanvasTool ct) {
+    private void draw(double x1, double y1, double x2, double y2, CanvasTool ct, CanvasColor cc) {
+        gc.setStroke(Color.valueOf(colorMap.get(cc)));
         switch (ct){
             case PENCIL:
                 gc.strokeLine(x1,y1,x2,y2);
@@ -312,8 +342,9 @@ public class GameController {
                 return;
             }
             // TODO: Maybe do some chunking, if more disappears under transport
+            gc.setStroke(Color.valueOf(colorMap.get(CanvasColor.valueOf(colorComboBox.getValue().toString()))));
             gc.strokeLine(prevX,prevY,event.getX(),event.getY());
-            ui.put(RoomFlag.CANVAS,playerID,new MouseInfo(prevX,prevY,x,y, CanvasTool.PENCIL));
+            ui.put(RoomFlag.CANVAS,playerID,new MouseInfo(prevX,prevY,x,y, CanvasTool.PENCIL,CanvasColor.valueOf(colorComboBox.getValue().toString())));
             prevX = event.getX();
             prevY = event.getY();
         } catch (InterruptedException e) {
