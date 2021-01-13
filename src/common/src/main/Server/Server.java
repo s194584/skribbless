@@ -69,7 +69,11 @@ public class Server {
     }
 
     private static void setRoom(String roomName) {
-        rooms.put(roomName,true);
+        if(rooms.getOrDefault(roomName,false)){
+            rooms.remove(roomName);
+        }else {
+            rooms.put(roomName, true);
+        }
     }
 
     private static boolean checkRoom(String roomName) {

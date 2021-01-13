@@ -21,4 +21,5 @@ public class ClientApp extends Application {
         stage.sizeToScene();
         stage.show();
     }
+
 }

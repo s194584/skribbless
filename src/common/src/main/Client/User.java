@@ -40,6 +40,13 @@ public class User {
 
     @Override
     public boolean equals(Object obj) {
+        if(!(obj instanceof User))
+            return false;
         return getId()==((User) obj).getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
     }
 }

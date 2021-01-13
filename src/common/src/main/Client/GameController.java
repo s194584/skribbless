@@ -30,6 +30,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
@@ -91,14 +92,16 @@ public class GameController {
 
     @FXML
     public void initialize() {
+        // Starts readies the Game thread
+        GameUserTask gut = new GameUserTask(taskInfo, ui);
+
         // Initial window setup
+        ((Stage) root.getScene().getWindow()).setOnCloseRequest(windowEvent -> gut.cancel());
         ((Stage) root.getScene().getWindow()).setTitle(taskInfo.getHostPort());
         ((Stage) root.getScene().getWindow()).setScene(new Scene(gamePane));
         userListView.setMouseTransparent(true);
         userListView.setFocusTraversable(false);
 
-        // Starts readies the Game thread
-        GameUserTask gut = new GameUserTask(taskInfo, ui);
 
         //make chooseWord loader:
         setupChooseWord(playerID);
@@ -109,116 +112,102 @@ public class GameController {
         sop.bind(gut.valueProperty());
         ssp.bind(gut.messageProperty());
 
-        sop.addListener(new ChangeListener() {
-            @Override
-            public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
-                Object[] message = (Object[]) newValue;
-                RoomResponseFlag flag = (RoomResponseFlag) message[0];
-                Object data = message[1];
-                System.out.println("GameController got flag: " + flag);
+        sop.addListener((observableValue, oldValue, newValue) -> {
+            Object[] message = (Object[]) newValue;
+            RoomResponseFlag flag = (RoomResponseFlag) message[0];
+            Object data = message[1];
+            System.out.println("GameController got flag: " + flag);
 
-                switch (flag) {
-                    case NEWPLAYER:
-                        addNewPlayer((User) data);
-                        break;
-                    case PLAYERREMOVED:
-                        removePlayer((User) data);
-                        break;
-                    case MESSAGE:
-                        updateChat((TextInfo) data);
-                        break;
-                    case CANVAS:
-                        updateCanvas((MouseInfo) data); //TODO: does this work?
-                        break;
-                    case GAMESTART:
-                        int gameInfo[] = (int[]) data;
-                        roundsLeftLabel.setText("" + gameInfo[0]);
-                        timeLabel.setText(gameInfo[1] + " s");
-                        if (isLeader.getValue()) {
-                            canvasPaneRoot.getChildren().clear();
-                        }
-                        break;
-                    case CHOOSEWORD:
-                        String wordsInfo[] = (String[]) data;
-                        showChooseWord(wordsInfo);
-                        break;
-                    case STARTTURN:
-                        int wordAndId[] = (int[]) data;
-                        myTurn = wordAndId[1]==playerID;
-                        if(!myTurn){
-                            currentWordLabel.setText("_ ".repeat(wordAndId[0]));
-                        }
+            switch (flag) {
+                case NEWPLAYER:
+                    addNewPlayer((User) data);
+                    break;
+                case PLAYERREMOVED:
+                    removePlayer((User) data);
+                    break;
+                case MESSAGE:
+                    updateChat((TextInfo) data);
+                    break;
+                case CANVAS:
+                    updateCanvas((MouseInfo) data); //TODO: does this work?
+                    break;
+                case GAMESTART:
+                    int[] gameInfo = (int[]) data;
+                    roundsLeftLabel.setText("" + gameInfo[0]);
+                    timeLabel.setText(gameInfo[1] + " s");
+                    if (isLeader.getValue()) {
                         canvasPaneRoot.getChildren().clear();
-                        gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
-                        canvasPaneRoot.getChildren().add(canvas);
-                        break;
-                    default:
-                        break;
-                }
+                    }
+                    break;
+                case CHOOSEWORD:
+                    String[] wordsInfo = (String[]) data;
+                    showChooseWord(wordsInfo);
+                    break;
+                case STARTTURN:
+                    int[] wordAndId = (int[]) data;
+                    myTurn = wordAndId[1]==playerID;
+                    if(!myTurn){
+                        currentWordLabel.setText("_ ".repeat(wordAndId[0]));
+                    }
+                    canvasPaneRoot.getChildren().clear();
+                    gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
+                    canvasPaneRoot.getChildren().add(canvas);
+                    break;
+                default:
+                    break;
             }
         });
 
         // this is a pseudo binding for isLeader
-        ssp.addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String oldString, String newString) {
-                isLeader.set(newString.equals("" + true));
-                if (!gameStarted && isLeader.getValue()) { //TODO: This logic might need to be somewhere else. since we don't acces it except in the begining.
-                    System.out.println("GameController setting gameOptions");
+        ssp.addListener((observableValue, oldValue, newValue) -> {
+            isLeader.set(newValue.equals("" + true));
+            if (!gameStarted && isLeader.getValue()) { //TODO: This logic might need to be somewhere else. since we don't acces it except in the begining.
+                System.out.println("GameController setting gameOptions");
 
-                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
-                    GameOptionsController gameOpCon = new GameOptionsController();
-                    fxmlLoader.setController(gameOpCon);
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
+                GameOptionsController gameOpCon = new GameOptionsController();
+                fxmlLoader.setController(gameOpCon);
 
-                    try {
-                        canvasPaneRoot.getChildren().add(fxmlLoader.load());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    gameOpCon.startGameButton.setOnAction(new EventHandler<ActionEvent>() {
-                        @Override
-                        public void handle(ActionEvent actionEvent) {
-                            try {
-                                int data[] = {(int) gameOpCon.roundsComboBox.getValue(),(int) gameOpCon.timeComboBox.getValue()};
-                                ui.put(RoomFlag.GAMESTART,playerID,data);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-
-
-                } else { //TODO: Game is started
-
+                try {
+                    canvasPaneRoot.getChildren().add(fxmlLoader.load());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+
+                gameOpCon.startGameButton.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                        try {
+                            int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
+                            ui.put(RoomFlag.GAMESTART, playerID, data);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            } else { //TODO: Game is started
+
             }
         });
 
         // Listerner for users
         userListView.setItems(users);
-        userListView.setCellFactory(new Callback<ListView, ListCell>() {
-            @Override
-            public ListCell call(ListView listView) {
-                UserListViewCell ulvc = new UserListViewCell();
-                ulvc.prefWidthProperty().bind(userListView.widthProperty().multiply(0.95));
-                return ulvc;
-            }
+        userListView.setCellFactory((Callback<ListView, ListCell>) listView -> {
+            UserListViewCell ulvc = new UserListViewCell();
+            ulvc.prefWidthProperty().bind(userListView.widthProperty().multiply(0.95));
+            return ulvc;
         });
 
         //Listener for writing in chat:
-        chatTextField.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent keyEvent) {
-                try {
-                    if (keyEvent.getCode().equals(KeyCode.ENTER)) {
-                        ui.put(RoomFlag.MESSAGE,playerID,chatTextField.getText());
-                        System.out.println("GameController put: " + chatTextField.getText());
-                        chatTextField.setText("");
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        chatTextField.setOnKeyPressed(keyEvent -> {
+            try {
+                if (keyEvent.getCode().equals(KeyCode.ENTER)&&!chatTextField.getText().isEmpty()) {
+                    ui.put(RoomFlag.MESSAGE,playerID,chatTextField.getText());
+                    System.out.println("GameController put: " + chatTextField.getText());
+                    chatTextField.setText("");
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         });
 
@@ -251,17 +240,14 @@ public class GameController {
             e.printStackTrace();
         }
 
-        EventHandler<ActionEvent> eventHandler = new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                try {
-                    String tmp = ((Button) actionEvent.getSource()).getText();
-                    ui.put(RoomFlag.WORDCHOOSEN,playerID,tmp);
-                    currentWordLabel.setText(tmp);
-                    canvasPaneRoot.getChildren().clear();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        EventHandler<ActionEvent> eventHandler = actionEvent -> {
+            try {
+                String tmp = ((Button) actionEvent.getSource()).getText();
+                ui.put(RoomFlag.WORDCHOOSEN,playerID,tmp);
+                currentWordLabel.setText(tmp);
+                canvasPaneRoot.getChildren().clear();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         };
 
@@ -283,7 +269,7 @@ public class GameController {
     }
 
     private void updateChat(TextInfo textInfo) {
-        if(chatTextFlow.getChildren().size()>3){
+        if(chatTextFlow.getChildren().size()>15){
             chatTextFlow.getChildren().remove(0,2);
             chatScrollPane.setVvalue(1.0d);
         }

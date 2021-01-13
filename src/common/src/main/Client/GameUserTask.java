@@ -43,6 +43,7 @@ public class GameUserTask extends Task {
         while (true) {
             if (isCancelled()) {
                 System.out.println("TODO: This is never actually done.");
+                lobby.put(RoomFlag.DISCONNECTED,userId,user);
                 return -1;
             }
 
@@ -94,4 +95,5 @@ class UiInbox implements Runnable {
             }
         }
     }
+
 }

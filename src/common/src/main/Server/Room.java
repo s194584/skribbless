@@ -89,7 +89,11 @@ public class Room implements Runnable {
 
                         // Select new leader if leader left.
                         //TODO: Select new leader if leader left.
-
+                        if(users.size()==0){
+                            System.out.println("No more player. Closing...");
+                            serverSpace.put(ServerFlag.SETROOM,roomName);
+                            return;
+                        }
                         // Broadcast that player left to other players.
                         broadcastToInboxes(RoomResponseFlag.PLAYERREMOVED, data);
                         break;
@@ -152,7 +156,7 @@ public class Room implements Runnable {
             return;
         }
 
-        if (users.size() == turnNumber) {
+        if (users.size()-1 == turnNumber) {
             numberOfRounds--;
             turnNumber = -1;
         }
@@ -217,6 +221,7 @@ public class Room implements Runnable {
         String inboxName = createName(playerID);
         repo.remove(inboxName);
         playerInboxes.remove(playerID);
+        playerGuessed.remove(playerID);
         playerAmount--;
     }
 
