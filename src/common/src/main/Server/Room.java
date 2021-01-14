@@ -188,7 +188,8 @@ public class Room implements Runnable {
         // Break if number of rounds is reached
         if (numberOfRounds == 0) {
             rankUsers();
-            broadcastToInboxes(RoomResponseFlag.ENDGAME,(User[]) users.toArray());
+            User[] userstmp = new User[users.size()];
+            broadcastToInboxes(RoomResponseFlag.ENDGAME,users.toArray(userstmp));
             return;
         }
 
