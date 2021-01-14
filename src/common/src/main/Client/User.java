@@ -38,6 +38,10 @@ public class User {
         return id;
     }
 
+    public void addScore(int i) {
+        score+=i;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(!(obj instanceof User))
@@ -49,4 +53,5 @@ public class User {
     public int hashCode() {
         return id;
     }
+
 }

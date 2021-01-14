@@ -19,14 +19,20 @@ public class Room implements Runnable {
     protected String currentWord = "notnull"; //The word which is being drawn
     protected int numberOfRounds;
     protected int turnTime;
+    protected int timeLeft;
     protected int turnNumber = -1;
 
     protected int playerAmount = 0;
     protected int playerAmountGuessed = 0;
-    protected ArrayList<User> users = new ArrayList<User>();
+    protected ArrayList<User> users = new ArrayList<>();
     protected HashMap<Integer, Space> playerInboxes = new HashMap<>();
     protected HashMap<Integer, String> playerNames = new HashMap<>(); //This is used for messages in the chat.
     protected HashMap<Integer, Boolean> playerGuessed = new HashMap<>();
+
+    // Timer
+    Timer turnTimer;
+    TimerTask takeTurnTime;
+    private boolean gameStarted = false;
 
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
@@ -45,16 +51,11 @@ public class Room implements Runnable {
     @Override
     public void run() {
         try {
-            // Create a local space (lobby)
-
-            // Add the space to the repository
-
+            turnTimer = new Timer();
 
             // Waiting on game to start
             Template initialMessageTemplate = new Template(new FormalField(String.class),
                     new FormalField(RoomFlag.class));  //Get name,enum
-
-//
 
             while (true) {
                 Object[] message = lobby.get(new FormalField(RoomFlag.class),
@@ -102,7 +103,15 @@ public class Room implements Runnable {
                         break;
                     case MESSAGE:
                         boolean correct = filterMessage(data);
-                        if (correct&&!playerGuessed.get(playerID)) {
+                        if (gameStarted&&(playerID!=users.get(turnNumber).getId())&&correct&&!playerGuessed.get(playerID)) {
+                            // Calculate score for guesser and drawer
+                            for (User u: users) {
+                                if(u.getId()==playerID){
+                                    u.addScore(timeLeft*10+(currentWord.length()*10));
+                                    users.get(turnNumber).addScore(100+(currentWord.length()*10));
+                                    broadcastToInboxes(RoomResponseFlag.ADDPOINTS, new User[]{u, users.get(turnNumber)});
+                                }
+                            }
                             playerGuessed.put(playerID,true);
                             playerAmountGuessed++;
                             TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
@@ -116,10 +125,6 @@ public class Room implements Runnable {
 
                         // Reset guesses when all have guessed the word
                         if(playerAmountGuessed==playerAmount-1){
-                            for (Integer k:playerGuessed.keySet()) {
-                                playerGuessed.put(k,false);
-                            }
-                            playerAmountGuessed = 0;
                             nextPlayer();
                         }
                         break;
@@ -130,12 +135,16 @@ public class Room implements Runnable {
 
                         broadcastToInboxes(RoomResponseFlag.GAMESTART,gameOptions);
 
+                        takeTurnTime = new takeTimeTask();
+
                         nextPlayer();
                         break;
                     case WORDCHOOSEN:
+                        gameStarted = true;
                         currentWord = data.toString();
-                        //TODO: Start timer
-
+                        timeLeft = turnTime;
+                        takeTurnTime = new takeTimeTask();
+                        turnTimer.schedule(takeTurnTime,1000,1000);
                         //TODO: Send startTurn tag with length of word. and begin turns in gamecontrollers.
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
                         break;
@@ -151,19 +160,46 @@ public class Room implements Runnable {
     }
 
     private void nextPlayer() {
-        System.out.println("Moving to next player...");
-        if (numberOfRounds == 0) {
-            return;
-        }
+        // Stop drawing for last player
+        if(gameStarted)
+            broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId());
 
+        // Stopping timer
+        takeTurnTime.cancel();
+        System.out.println("Moving to next player...");
+
+        // Reset guesses
+        for (Integer k:playerGuessed.keySet()) {
+            playerGuessed.put(k,false);
+
+        }
+        playerAmountGuessed = 0;
+        currentWord = "";
+
+
+
+        // Lets it go around in a circle
         if (users.size()-1 == turnNumber) {
             numberOfRounds--;
             turnNumber = -1;
+            broadcastToInboxes(RoomResponseFlag.NEXTROUND,numberOfRounds);
         }
 
+        // Break if number of rounds is reached
+        if (numberOfRounds == 0) {
+            rankUsers();
+            broadcastToInboxes(RoomResponseFlag.ENDGAME,(User[]) users.toArray());
+            return;
+        }
+
+        // Prompts the next player with word choice
         turnNumber++;
         String possibleWords[] = generateWords();
         broadcastToOne(RoomResponseFlag.CHOOSEWORD,possibleWords,(users.get(turnNumber)).getId());
+    }
+
+    private void rankUsers() {
+        users.sort(Comparator.comparingInt(User::getScore));
     }
 
     private String[] generateWords() {
@@ -204,6 +240,9 @@ public class Room implements Runnable {
     }
 
     private boolean filterMessage(Object data) {
+        if(data.toString().isEmpty()){
+            return false;
+        }
         return currentWord.equals(data.toString());
     }
 
@@ -254,4 +293,21 @@ public class Room implements Runnable {
     public Space getLobby() {
         return lobby;
     }
+
+
+
+    class takeTimeTask extends TimerTask {
+        @Override
+        public void run() {
+            if(Room.this.timeLeft == 0){
+                nextPlayer();
+                this.cancel();
+            }
+            broadcastToInboxes(RoomResponseFlag.TIMETICK, Room.this.timeLeft);
+            Room.this.timeLeft--;
+        }
+    }
+
+
+
 }

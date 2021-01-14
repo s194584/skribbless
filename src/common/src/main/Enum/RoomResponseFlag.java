@@ -7,5 +7,9 @@ public enum RoomResponseFlag {
     CANVAS,
     GAMESTART,
     CHOOSEWORD,
-    STARTTURN
+    STARTTURN,
+    TIMETICK,
+    NEXTROUND,
+    ENDGAME,
+    STOPDRAW, ADDPOINTS
 }

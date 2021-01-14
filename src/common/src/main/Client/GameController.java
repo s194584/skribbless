@@ -35,7 +35,9 @@ import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
 public class GameController {
@@ -78,6 +80,7 @@ public class GameController {
     private boolean gameStarted = false;
     private Space ui;
     private boolean dragging;
+    private GameOptionsController gameOpCon;
     private Parent chooseWordPane;
     private ChooseWordController cwCon;
     private boolean myTurn;
@@ -127,9 +130,15 @@ public class GameController {
             switch (flag) {
                 case NEWPLAYER:
                     addNewPlayer((User) data);
+                    if(isLeader.getValue()&&users.size()>1){
+                        gameOpCon.startGameButton.setDisable(false);
+                    }
                     break;
                 case PLAYERREMOVED:
                     removePlayer((User) data);
+                    if(users.size()<2){
+                        gameOpCon.startGameButton.setDisable(true);
+                    }
                     break;
                 case MESSAGE:
                     updateChat((TextInfo) data);
@@ -159,6 +168,27 @@ public class GameController {
                     gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
                     canvasPaneRoot.getChildren().add(canvas);
                     break;
+                case TIMETICK:
+                    timeLabel.setText(data+"s");
+                    break;
+                case NEXTROUND:
+                    roundsLeftLabel.setText(data+"");
+                    break;
+                case ADDPOINTS:
+                    addPoints((User[])data);
+                    userListView.refresh();
+                    break;
+                case STOPDRAW:
+                    myTurn = false;
+                    break;
+                case ENDGAME:
+                    User[] rankedUsers = (User[]) data;
+                    userListView.setVisible(false);
+                    users.clear();
+                    users.add(rankedUsers[0]);
+
+                    setupGameOver();
+                    break;
                 default:
                     break;
             }
@@ -171,7 +201,7 @@ public class GameController {
                 System.out.println("GameController setting gameOptions");
 
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
-                GameOptionsController gameOpCon = new GameOptionsController();
+                gameOpCon = new GameOptionsController();
                 fxmlLoader.setController(gameOpCon);
 
                 try {
@@ -180,15 +210,14 @@ public class GameController {
                     e.printStackTrace();
                 }
 
-                gameOpCon.startGameButton.setOnAction(new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent actionEvent) {
-                        try {
-                            int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
-                            ui.put(RoomFlag.GAMESTART, playerID, data);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                gameOpCon.startGameButton.setDisable(true);
+
+                gameOpCon.startGameButton.setOnAction(actionEvent -> {
+                    try {
+                        int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
+                        ui.put(RoomFlag.GAMESTART, playerID, data);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 });
             } else { //TODO: Game is started
@@ -220,6 +249,28 @@ public class GameController {
         Thread th = new Thread(gut);
         th.setDaemon(true);
         th.start();
+    }
+
+    private void setupGameOver() {
+        ScrollPane gameOverScrollPane = new ScrollPane();
+        ListView ranksListView = new ListView();
+        ranksListView.setCellFactory((Callback<ListView, ListCell>) listView -> new UserListViewCell());
+        ranksListView.setItems(users);
+        gameOverScrollPane.setContent(ranksListView);
+        canvasPaneRoot.getChildren().clear();
+        canvasPaneRoot.getChildren().add(gameOverScrollPane);
+    }
+
+    private void addPoints(User[] data) {
+        // Incoming users
+        for (User u1 : data) {
+            // List of all users
+            for (User u2: users) {
+                if (u1.equals(u2)){
+                    u2.setScore(u1.getScore());
+                }
+            }
+        }
     }
 
     private void setupCanvas() {
