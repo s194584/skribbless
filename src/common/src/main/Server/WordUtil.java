@@ -30,7 +30,7 @@ public class WordUtil {
             "field",
             "kiss",
             "pacifier",
-            
+
             //
             "replace",
             "auction",

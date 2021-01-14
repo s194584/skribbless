@@ -70,9 +70,7 @@ public class GameController {
 
     double prevX,prevY;
 
-    private ObservableList<String> colorsList;
     private ObservableList<User> users = FXCollections.observableArrayList();
-    private HashMap<CanvasColor,String> colorMap = new HashMap<>();
 
     private SimpleObjectProperty sop;
     private SimpleStringProperty ssp;
@@ -112,8 +110,7 @@ public class GameController {
         setupCanvas();
 
         //Setting up color box.
-        setupColorMap();
-        setupColorsList();
+        ObservableList<String> colorsList = ColorMap.getColorList();
         colorComboBox.setItems(colorsList);
         colorComboBox.setValue(colorsList.get(0));
 
@@ -225,26 +222,6 @@ public class GameController {
         th.start();
     }
 
-    private void setupColorMap() {
-        colorMap.put(CanvasColor.BLACK, Color.BLACK.toString());
-        colorMap.put(CanvasColor.RED, Color.RED.toString());
-        colorMap.put(CanvasColor.BLUE, Color.BLUE.toString());
-        colorMap.put(CanvasColor.YELLOW, Color.YELLOW.toString());
-        colorMap.put(CanvasColor.GREEN, Color.GREEN.toString());
-        colorMap.put(CanvasColor.BROWN, Color.BROWN.toString());
-        colorMap.put(CanvasColor.WHITE, Color.WHITE.toString());
-    }
-
-    private void setupColorsList() {
-        String[] tmp = new String[CanvasColor.values().length];
-        int count = 0;
-        for (CanvasColor cv: CanvasColor.values()) {
-           tmp[count] = cv.toString();
-           count++;
-        }
-        colorsList = FXCollections.observableArrayList(tmp);
-    }
-
     private void setupCanvas() {
         canvas = new Canvas();
         canvas.setWidth(814);
@@ -290,7 +267,7 @@ public class GameController {
     }
 
     private void draw(double x1, double y1, double x2, double y2, CanvasTool ct, CanvasColor cc) {
-        gc.setStroke(Color.valueOf(colorMap.get(cc)));
+        gc.setStroke(ColorMap.getColor(cc));
         switch (ct){
             case PENCIL:
                 gc.strokeLine(x1,y1,x2,y2);
@@ -342,7 +319,7 @@ public class GameController {
                 return;
             }
             // TODO: Maybe do some chunking, if more disappears under transport
-            gc.setStroke(Color.valueOf(colorMap.get(CanvasColor.valueOf(colorComboBox.getValue().toString()))));
+            gc.setStroke(ColorMap.getColor(CanvasColor.valueOf(colorComboBox.getValue().toString())));
             gc.strokeLine(prevX,prevY,event.getX(),event.getY());
             ui.put(RoomFlag.CANVAS,playerID,new MouseInfo(prevX,prevY,x,y, CanvasTool.PENCIL,CanvasColor.valueOf(colorComboBox.getValue().toString())));
             prevX = event.getX();
