@@ -43,7 +43,7 @@
          <children>
             <ScrollPane fx:id="chatScrollPane" style="-fx-background: #9dC3d9;">
                <content>
-                  <TextFlow fx:id="chatTextFlow" maxHeight="-Infinity" prefWidth="500.0" style="-fx-background-color: #0d93d1;" />
+                  <TextFlow fx:id="chatTextFlow" maxHeight="-Infinity" prefWidth="500.0" style="-fx-background-color: #9dC3d9;" />
                </content>
             </ScrollPane>
             <TextField fx:id="chatTextField" promptText="Enter messege" />
