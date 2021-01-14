@@ -20,6 +20,7 @@ public class ClientApp extends Application {
         stage.setScene(new Scene(root));
         stage.sizeToScene();
         stage.show();
+        stage.setResizable(false);
     }
 
 }

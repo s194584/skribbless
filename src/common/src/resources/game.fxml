@@ -10,7 +10,6 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.TextFlow?>
@@ -26,7 +25,7 @@
     <RowConstraints maxHeight="199.0" minHeight="10.0" prefHeight="176.0" vgrow="SOMETIMES" />
   </rowConstraints>
    <children>
-      <Button fx:id="quitButton" mnemonicParsing="false" style="-fx-background-color: salmon;" text="&lt;-" />
+      <Button fx:id="quitButton" mnemonicParsing="false" onAction="#quit" style="-fx-background-color: salmon;" text="&lt;-" />
       <ScrollPane style="-fx-background-color: white;" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets />
@@ -45,7 +44,7 @@
             <TextField fx:id="chatTextField" promptText="Enter messege" />
          </children>
       </VBox>
-      <Pane fx:id="canvasPaneRoot" prefHeight="200.0" prefWidth="200.0" style="-fx-border-color: black;" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+      <HBox fx:id="canvasPaneRoot" alignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
       <HBox alignment="CENTER" GridPane.rowIndex="2">
          <children>
             <Label text="Rounds Left: " />

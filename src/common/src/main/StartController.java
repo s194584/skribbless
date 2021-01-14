@@ -65,6 +65,7 @@ public class StartController {
                             fxmlLoader.setLocation(getClass().getResource("/game.fxml"));
                             fxmlLoader.setController(new GameController(root,userTask.getTaskInfo()));
                             fxmlLoader.load();
+                            userTask.cancel();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }

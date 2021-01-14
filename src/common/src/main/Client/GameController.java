@@ -5,6 +5,7 @@ import common.src.main.Enum.CanvasColor;
 import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
+import common.src.main.StartController;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -48,6 +49,8 @@ public class GameController {
     @FXML
     Pane gamePane;
     @FXML
+    Button quitButton;
+    @FXML
     ListView userListView;
     @FXML
     TextFlow chatTextFlow;
@@ -73,7 +76,7 @@ public class GameController {
     double prevX,prevY;
 
     private ObservableList<User> users = FXCollections.observableArrayList();
-
+    private GameUserTask gut;
     private SimpleObjectProperty sop;
     private SimpleStringProperty ssp;
     private SimpleBooleanProperty isLeader;
@@ -98,7 +101,7 @@ public class GameController {
     @FXML
     public void initialize() {
         // Starts readies the Game thread
-        GameUserTask gut = new GameUserTask(taskInfo, ui);
+        gut = new GameUserTask(taskInfo, ui);
 
         // Initial window setup
         ((Stage) root.getScene().getWindow()).setOnCloseRequest(windowEvent -> gut.cancel());
@@ -129,14 +132,14 @@ public class GameController {
 
             switch (flag) {
                 case NEWPLAYER:
-                    addNewPlayer((User) data);
+                    addNewPlayers((User[]) data);
                     if(isLeader.getValue()&&users.size()>1){
                         gameOpCon.startGameButton.setDisable(false);
                     }
                     break;
                 case PLAYERREMOVED:
                     removePlayer((User) data);
-                    if(users.size()<2){
+                    if(gameOpCon!=null&&users.size()<2){
                         gameOpCon.startGameButton.setDisable(true);
                     }
                     break;
@@ -183,10 +186,9 @@ public class GameController {
                     break;
                 case ENDGAME:
                     User[] rankedUsers = (User[]) data;
-                    userListView.setVisible(false);
+                    userListView.getParent().setVisible(false);
                     users.clear();
-                    users.add(rankedUsers[0]);
-
+                    users.addAll(rankedUsers);
                     setupGameOver();
                     break;
                 default:
@@ -251,12 +253,19 @@ public class GameController {
         th.start();
     }
 
+    private void addNewPlayers(User[] data) {
+        users.clear();
+        users.addAll(data);
+    }
+
     private void setupGameOver() {
         ScrollPane gameOverScrollPane = new ScrollPane();
         ListView ranksListView = new ListView();
         ranksListView.setCellFactory((Callback<ListView, ListCell>) listView -> new UserListViewCell());
         ranksListView.setItems(users);
+        ranksListView.setMouseTransparent(true);
         gameOverScrollPane.setContent(ranksListView);
+
         canvasPaneRoot.getChildren().clear();
         canvasPaneRoot.getChildren().add(gameOverScrollPane);
     }
@@ -286,6 +295,7 @@ public class GameController {
     private void updateCanvas(MouseInfo mi) {
         draw(mi.getX1(),mi.getY1(),mi.getX2(),mi.getY2(),mi.getCt(),mi.getCc());
     }
+
     private void setupChooseWord(int playerID) {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/chooseWord.fxml"));
         cwCon = new ChooseWordController();
@@ -380,6 +390,13 @@ public class GameController {
         }
     }
 
-
+    @FXML
+    void quit(ActionEvent event) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader();
+        fxmlLoader.setLocation(getClass().getResource("/start.fxml"));
+        fxmlLoader.setController(new StartController());
+        ((Stage)canvasPaneRoot.getScene().getWindow()).setScene(new Scene(fxmlLoader.load()));
+        gut.cancel();
+    }
 
 }

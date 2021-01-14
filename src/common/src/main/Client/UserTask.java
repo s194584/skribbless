@@ -30,6 +30,7 @@ public class UserTask extends Task {
 
     public UserTask(Space ui) {
         this.ui = ui;
+
     }
 
     public TaskInfo getTaskInfo() {

@@ -70,17 +70,28 @@ public class Room implements Runnable {
                         User user = ((User) data);
                         //Generate inboxSpace and sent connection string, back to user. Add user to list
                         boolean isLeader = playerAmount == 0;
-                        addplayer(playerID);
+                        addPlayer(playerID);
                         playerNames.put(playerID, user.getName());
                         playerGuessed.put(playerID,false);
+
+                        // Provide inbox to connected player
                         lobby.put(playerID, createName(playerID), isLeader);
+
                         System.out.println("User: " + message[1].toString() + " has connected");
 
                         //Broadcast arrival of new player to other players:
-                        broadcastUsersToInbox(RoomResponseFlag.NEWPLAYER, playerInboxes.get(playerID));
+//                        broadcastUsersToInbox(RoomResponseFlag.NEWPLAYER, playerInboxes.get(playerID));
+//                        user.setLeader(isLeader);
+//                        users.add(user); //Add user after to ensure no duplicates
+//                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER, data);
+
+                        // Alternative
                         user.setLeader(isLeader);
-                        users.add(user); //Add user after to ensure no duplicates
-                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER, data);
+                        users.add(user);
+
+                        User[] userstmp = new User[users.size()];
+                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER,users.toArray(userstmp));
+
                         break;
                     case DISCONNECTED:
                         // Remove inbox from list and repo.
@@ -144,7 +155,7 @@ public class Room implements Runnable {
                         currentWord = data.toString();
                         timeLeft = turnTime;
                         takeTurnTime = new takeTimeTask();
-                        turnTimer.schedule(takeTurnTime,1000,1000);
+                        turnTimer.schedule(takeTurnTime,0,1000);
                         //TODO: Send startTurn tag with length of word. and begin turns in gamecontrollers.
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
                         break;
@@ -200,7 +211,7 @@ public class Room implements Runnable {
     }
 
     private void rankUsers() {
-        users.sort(Comparator.comparingInt(User::getScore));
+        users.sort(Comparator.comparingInt(User::getScore).reversed());
     }
 
     private String[] generateWords() {
@@ -275,7 +286,7 @@ public class Room implements Runnable {
         }
     }
 
-    private void addplayer(int playerID) {
+    private void addPlayer(int playerID) {
         Space inbox = generateInbox(playerID);
         playerInboxes.put(playerID, inbox);
         playerAmount++;
