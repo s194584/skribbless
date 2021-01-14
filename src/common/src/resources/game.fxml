@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -12,9 +13,10 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <?import javafx.scene.text.TextFlow?>
 
-<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: white;" vgap="4.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<GridPane fx:id="gamePane" alignment="CENTER" hgap="4.0" prefHeight="720.0" prefWidth="1080.0" style="-fx-background-color: lightblue;" vgap="4.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
   <columnConstraints>
     <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="SOMETIMES" minWidth="115.0" percentWidth="22.0" prefWidth="115.0" />
     <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="253.0" prefWidth="326.0" />
@@ -25,30 +27,39 @@
     <RowConstraints maxHeight="199.0" minHeight="10.0" prefHeight="176.0" vgrow="SOMETIMES" />
   </rowConstraints>
    <children>
-      <Button fx:id="quitButton" mnemonicParsing="false" onAction="#quit" style="-fx-background-color: salmon;" text="&lt;-" />
-      <ScrollPane style="-fx-background-color: white;" GridPane.rowIndex="1">
+      <Button fx:id="quitButton" mnemonicParsing="false" onAction="#quit" text="&lt;-" />
+      <ScrollPane style="-fx-background: lightblue; -fx-border: lightblue;" GridPane.rowIndex="1">
          <GridPane.margin>
             <Insets />
          </GridPane.margin>
          <content>
-            <ListView fx:id="userListView" prefWidth="196.0" />
+            <ListView fx:id="userListView" prefHeight="433.0" prefWidth="196.0" />
          </content>
+         <cursor>
+            <Cursor fx:constant="CROSSHAIR" />
+         </cursor>
       </ScrollPane>
       <VBox alignment="BOTTOM_CENTER" GridPane.columnIndex="1" GridPane.rowIndex="2">
          <children>
-            <ScrollPane fx:id="chatScrollPane">
+            <ScrollPane fx:id="chatScrollPane" style="-fx-background: #9dC3d9;">
                <content>
-                  <TextFlow fx:id="chatTextFlow" maxHeight="-Infinity" prefWidth="500.0" />
+                  <TextFlow fx:id="chatTextFlow" maxHeight="-Infinity" prefWidth="500.0" style="-fx-background-color: #0d93d1;" />
                </content>
             </ScrollPane>
             <TextField fx:id="chatTextField" promptText="Enter messege" />
          </children>
       </VBox>
-      <HBox fx:id="canvasPaneRoot" alignment="CENTER" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
+      <HBox fx:id="canvasPaneRoot" alignment="CENTER" style="-fx-border-color: black; -fx-background-color: white; -fx-border-width: 4;" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
       <HBox alignment="CENTER" GridPane.rowIndex="2">
          <children>
-            <Label text="Rounds Left: " />
-            <Label fx:id="roundsLeftLabel" text="Not choosen..." />
+            <Label text="Rounds Left: ">
+               <font>
+                  <Font name="Cambria" size="18.0" />
+               </font></Label>
+            <Label fx:id="roundsLeftLabel" text="Not chosen..">
+               <font>
+                  <Font name="Cambria Bold" size="18.0" />
+               </font></Label>
          </children>
       </HBox>
       <GridPane alignment="CENTER" focusTraversable="true" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
@@ -61,9 +72,17 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label fx:id="timeLabel" text="Got no time!" />
-            <Label fx:id="currentWordLabel" alignment="CENTER" text="Would you pick a word already?!" GridPane.columnIndex="1" />
-            <ComboBox fx:id="colorComboBox" prefWidth="150.0" GridPane.columnIndex="2" />
+            <Label fx:id="timeLabel" text="Got no time!">
+               <font>
+                  <Font name="Candara" size="26.0" />
+               </font>
+            </Label>
+            <Label fx:id="currentWordLabel" alignment="CENTER" text="Would you pick a word already?!" GridPane.columnIndex="1">
+               <font>
+                  <Font name="Candara" size="20.0" />
+               </font>
+            </Label>
+            <ComboBox fx:id="colorComboBox" prefWidth="150.0" style="-fx-background-color: white;" GridPane.columnIndex="2" />
          </children>
       </GridPane>
    </children>

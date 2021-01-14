@@ -6,6 +6,7 @@ import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import common.src.main.StartController;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -88,6 +89,10 @@ public class GameController {
     private ChooseWordController cwCon;
     private boolean myTurn;
 
+    private MouseInfo mouseInfo;
+
+
+
     public GameController(Pane r, TaskInfo ti) {
         root = r;
         taskInfo = ti;
@@ -147,7 +152,7 @@ public class GameController {
                     updateChat((TextInfo) data);
                     break;
                 case CANVAS:
-                    updateCanvas((MouseInfo) data); //TODO: does this work?
+                    Platform.runLater(() -> updateCanvas((MouseInfo) data));
                     break;
                 case GAMESTART:
                     int[] gameInfo = (int[]) data;
@@ -288,12 +293,18 @@ public class GameController {
         canvas.setHeight(436);
         canvas.setOnMousePressed(this::updateInitialPosition);
         canvas.setOnMouseDragged(this::updateStroke);
-        canvas.setOnMouseReleased(this::releaseTool);
+        try {
+            canvas.setOnMouseReleased(this::releaseTool);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         gc = canvas.getGraphicsContext2D();
     }
 
     private void updateCanvas(MouseInfo mi) {
-        draw(mi.getX1(),mi.getY1(),mi.getX2(),mi.getY2(),mi.getCt(),mi.getCc());
+        for (double[] pos: mi.getLines()) {
+            draw(pos[0],pos[1],pos[2],pos[3],mi.getCt(),mi.getCc());
+        }
     }
 
     private void setupChooseWord(int playerID) {
@@ -357,11 +368,17 @@ public class GameController {
     @FXML
     void releaseTool(MouseEvent event) {
         dragging = false;
+        try {
+            ui.put(RoomFlag.CANVAS,playerID,mouseInfo);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     void updateInitialPosition(MouseEvent event) {
         if (myTurn) {
+            mouseInfo = new MouseInfo(CanvasTool.PENCIL,CanvasColor.valueOf(colorComboBox.getValue().toString()));
             prevX = event.getX();
             prevY = event.getY();
             dragging = true;
@@ -375,19 +392,16 @@ public class GameController {
         }
         double x = event.getX();
         double y = event.getY();
-        try {
-            if (Math.abs(x-prevX)<10&&Math.abs(y-prevY)<10){
-                return;
-            }
-            // TODO: Maybe do some chunking, if more disappears under transport
-            gc.setStroke(ColorMap.getColor(CanvasColor.valueOf(colorComboBox.getValue().toString())));
-            gc.strokeLine(prevX,prevY,event.getX(),event.getY());
-            ui.put(RoomFlag.CANVAS,playerID,new MouseInfo(prevX,prevY,x,y, CanvasTool.PENCIL,CanvasColor.valueOf(colorComboBox.getValue().toString())));
-            prevX = event.getX();
-            prevY = event.getY();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (Math.abs(x-prevX)<3&&Math.abs(y-prevY)<3){
+            return;
         }
+        // TODO: Maybe do some chunking, if more disappears under transport
+
+        gc.setStroke(ColorMap.getColor(mouseInfo.getCc()));
+        gc.strokeLine(prevX,prevY,event.getX(),event.getY());
+        mouseInfo.addLine(prevX,prevY,event.getX(),event.getY());
+        prevX = event.getX();
+        prevY = event.getY();
     }
 
     @FXML

@@ -135,7 +135,7 @@ public class Room implements Runnable {
                         }
 
                         // Reset guesses when all have guessed the word
-                        if(playerAmountGuessed==playerAmount-1){
+                        if(gameStarted&&playerAmountGuessed==playerAmount-1){
                             nextPlayer();
                         }
                         break;
