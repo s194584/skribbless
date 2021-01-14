@@ -18,7 +18,9 @@ public class ColorMap {
             CanvasColor.YELLOW, Color.YELLOW,
             CanvasColor.GREEN, Color.GREEN,
             CanvasColor.BROWN, Color.BROWN,
-            CanvasColor.WHITE, Color.WHITE
+            CanvasColor.WHITE, Color.WHITE,
+            CanvasColor.PINK, Color.PINK,
+            CanvasColor.ORANGE, Color.ORANGE
     );
 
     public static ObservableList<String> getColorList(){

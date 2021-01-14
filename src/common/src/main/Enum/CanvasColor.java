@@ -7,5 +7,7 @@ public enum CanvasColor {
     BLUE,
     YELLOW,
     BROWN,
-    WHITE
+    WHITE,
+    PINK,
+    ORANGE
 }
