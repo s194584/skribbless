@@ -43,21 +43,20 @@ public class Room implements Runnable {
         this.serverSpace = serverSpace;
         lobby = new SequentialSpace();
         repo.add(roomName, lobby);
-        // projection 11
-        serverSpace.put(roomName, ServerFlag.ROOMOK);
-        System.out.println("Room added: " + roomName);
     }
 
     @Override
     public void run() {
         try {
+            // projection 12
+            serverSpace.put(roomName, ServerFlag.ROOMOK);
+            System.out.println("Room added: " + roomName);
+
+            // Create instance of a Timer for later use
             turnTimer = new Timer();
 
-            // Waiting on game to start
-            Template initialMessageTemplate = new Template(new FormalField(String.class),
-                    new FormalField(RoomFlag.class));  //Get name,enum
-
             while (true) {
+
                 Object[] message = lobby.get(new FormalField(RoomFlag.class),
                         new FormalField(Integer.class),
                         new FormalField(Object.class));
@@ -139,7 +138,7 @@ public class Room implements Runnable {
                             nextPlayer();
                         }
                         break;
-                    case GAMESTART:
+                    case GAMESTART: // UI and sync
                         int gameOptions[] = (int[]) data;
                         numberOfRounds = gameOptions[0];
                         turnTime = gameOptions[1];
@@ -173,7 +172,7 @@ public class Room implements Runnable {
     private void nextPlayer() {
         // Stop drawing for last player
         if(gameStarted)
-            broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId());
+            broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId()); // UI only
 
         // Stopping timer
         takeTurnTime.cancel();
@@ -193,7 +192,7 @@ public class Room implements Runnable {
         if (users.size()-1 == turnNumber) {
             numberOfRounds--;
             turnNumber = -1;
-            broadcastToInboxes(RoomResponseFlag.NEXTROUND,numberOfRounds);
+            broadcastToInboxes(RoomResponseFlag.NEXTROUND,numberOfRounds); // UI only
         }
 
         // Break if number of rounds is reached

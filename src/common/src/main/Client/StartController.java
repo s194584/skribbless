@@ -1,4 +1,4 @@
-package common.src.main;
+package common.src.main.Client;
 
 import common.src.main.Client.GameController;
 import common.src.main.Client.UserTask;

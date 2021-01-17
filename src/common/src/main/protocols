@@ -35,13 +35,38 @@ if isConnected()@usertask then
     else
         notConnected()@usertask
 else
-    reset()@usertask
+    notConnected()@usertask
 
 
 
 
 
-
-
-
+(1) | connect()@UT;
+(2) | if isConnected()@UT then
+(3) |    UT.(CONNECTED,"") -> server.msg(ServerFlag,String);
+(4) |    server.(id) -> UT.id(int);
+(5) |    openCreationHandler(id,space,repository)@server;
+(6) |    incrementId()@server;
+(7) |    UT.(action,roomName) -> CH.msg(ServerFlag,String);
+(8) |    if msg[0] == HOST@CH then
+(9) |       CH.(GENERATEROOM,"") -> server.msg(ServerFlag,String);
+(10)|       server.(GENERATEDROOM,createRoomName()) ->
+                        CH.msg(GENERATEDROOM,String);
+(11)|       createRoom(msg[1])@CH;
+(12)|       room.(roomName,ROOMOK) -> CH.(msg[1],ServerFlag);
+(13)|       CH.(SETROOM,msg[1]) -> server.msg(ServerFlag,String);
+(14)|       setRoom(msg[1])@server;
+(15)|       CH.(true,roomName[1]) -> UT.response(boolean,String);
+(8) |
+(16)|    CH.(CHECKROOM,msg[1]) -> server.msg(ServerFlag,String);
+(17)|    server.(msg[1],checkRoom(msg[1]) ->
+                        CH.serverResponse(msg[1],boolean);
+(18)|    CH.(serverResponse[1],serverResponse[0]) -> UT.response(boolean,String)
+(19)|    if response[0]@UT then
+(20)|       connectToRoom(response[1])@UT;
+(21)|       connected()@UT;
+(19)|    else
+(22)|       notConnected()@UT;
+(2) | else
+(23)|    notConnected()@UT;
 

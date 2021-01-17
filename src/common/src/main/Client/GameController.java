@@ -5,7 +5,6 @@ import common.src.main.Enum.CanvasColor;
 import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
-import common.src.main.StartController;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -27,8 +26,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
@@ -37,10 +34,7 @@ import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.Comparator;
 
 public class GameController {
 
@@ -172,6 +166,8 @@ public class GameController {
                     if(!myTurn){
                         currentWordLabel.setText("_ ".repeat(wordAndId[0]));
                     }
+                    // Show whose turn it is
+                    userListView.getSelectionModel().select(new User("","",wordAndId[1],0));
                     canvasPaneRoot.getChildren().clear();
                     gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
                     canvasPaneRoot.getChildren().add(canvas);
@@ -359,10 +355,6 @@ public class GameController {
 
     private void removePlayer(User user) {
         users.remove(user);
-    }
-
-    private void addNewPlayer(User user) {
-        users.add(user);
     }
 
     @FXML

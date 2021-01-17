@@ -1,6 +1,5 @@
 package common.src.main.Client;
 
-import common.src.main.StartController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -8,7 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class ClientApp extends Application {
-
+    //--module-path ${JAVAFX_11} --add-modules=javafx.fxml,javafx.controls
     public static void main(String[] args) {launch(args);}
 
     @Override
@@ -22,5 +21,4 @@ public class ClientApp extends Application {
         stage.show();
         stage.setResizable(false);
     }
-
 }
