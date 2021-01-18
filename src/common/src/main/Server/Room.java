@@ -77,13 +77,6 @@ public class Room implements Runnable {
                         lobby.put(playerID, createName(playerID), isLeader);
 
                         System.out.println("User: " + message[1].toString() + " has connected");
-
-                        //Broadcast arrival of new player to other players:
-//                        broadcastUsersToInbox(RoomResponseFlag.NEWPLAYER, playerInboxes.get(playerID));
-//                        user.setLeader(isLeader);
-//                        users.add(user); //Add user after to ensure no duplicates
-//                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER, data);
-
                         // Alternative
                         user.setLeader(isLeader);
                         users.add(user);
@@ -135,27 +128,28 @@ public class Room implements Runnable {
 
                         // Reset guesses when all have guessed the word
                         if(gameStarted&&playerAmountGuessed==playerAmount-1){
-                            nextPlayer();
+                            nextTurn();
                         }
                         break;
-                    case GAMESTART: // UI and sync
+                    case GAMESTART:
                         int gameOptions[] = (int[]) data;
                         numberOfRounds = gameOptions[0];
                         turnTime = gameOptions[1];
 
+                        // UI and sync
                         broadcastToInboxes(RoomResponseFlag.GAMESTART,gameOptions);
 
                         takeTurnTime = new takeTimeTask();
 
-                        nextPlayer();
+                        nextTurn();
                         break;
-                    case WORDCHOOSEN:
+                    case WORDCHOSEN:
                         gameStarted = true;
                         currentWord = data.toString();
                         timeLeft = turnTime;
                         takeTurnTime = new takeTimeTask();
                         turnTimer.schedule(takeTurnTime,0,1000);
-                        //TODO: Send startTurn tag with length of word. and begin turns in gamecontrollers.
+                        // Let others know the
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
                         break;
                 }
@@ -169,7 +163,7 @@ public class Room implements Runnable {
         }
     }
 
-    private void nextPlayer() {
+    private void nextTurn() {
         // Stop drawing for last player
         if(gameStarted)
             broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId()); // UI only
@@ -199,9 +193,10 @@ public class Room implements Runnable {
         if (numberOfRounds == 0) {
             rankUsers();
             User[] userstmp = new User[users.size()];
-            broadcastToInboxes(RoomResponseFlag.ENDGAME,users.toArray(userstmp));
+            broadcastToInboxes(RoomResponseFlag.ENDGAME,users.toArray(userstmp)); // Update UI at clients
             return;
         }
+
 
         // Prompts the next player with word choice
         turnNumber++;
@@ -311,7 +306,7 @@ public class Room implements Runnable {
         @Override
         public void run() {
             if(Room.this.timeLeft == 0){
-                nextPlayer();
+                nextTurn();
                 this.cancel();
             }
             broadcastToInboxes(RoomResponseFlag.TIMETICK, Room.this.timeLeft);

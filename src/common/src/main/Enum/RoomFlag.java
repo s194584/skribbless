@@ -6,5 +6,5 @@ public enum RoomFlag {
     MESSAGE,
     CANVAS,
     GAMESTART,
-    WORDCHOOSEN
+    WORDCHOSEN
 }

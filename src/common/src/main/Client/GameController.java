@@ -12,7 +12,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -34,7 +33,6 @@ import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;
-import java.util.Comparator;
 
 public class GameController {
 
@@ -168,6 +166,7 @@ public class GameController {
                     }
                     // Show whose turn it is
                     userListView.getSelectionModel().select(new User("","",wordAndId[1],0));
+
                     canvasPaneRoot.getChildren().clear();
                     gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
                     canvasPaneRoot.getChildren().add(canvas);
@@ -223,9 +222,8 @@ public class GameController {
                         e.printStackTrace();
                     }
                 });
-            } else { //TODO: Game is started
-
             }
+
         });
 
         // Listerner for users
@@ -314,18 +312,18 @@ public class GameController {
             e.printStackTrace();
         }
 
-        EventHandler<ActionEvent> eventHandler = actionEvent -> {
+
+        cwCon.setEventHandler(actionEvent -> {
             try {
                 String tmp = ((Button) actionEvent.getSource()).getText();
-                ui.put(RoomFlag.WORDCHOOSEN,playerID,tmp);
+                // Send WordChosen
+                ui.put(RoomFlag.WORDCHOSEN,playerID,tmp);
                 currentWordLabel.setText(tmp);
                 canvasPaneRoot.getChildren().clear();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        };
-
-        cwCon.setEventHandler(eventHandler);
+        });
     }
 
     private void showChooseWord(String[] wordsInfo) {
