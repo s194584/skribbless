@@ -74,7 +74,7 @@ public class GameController {
     private SimpleStringProperty ssp;
     private SimpleBooleanProperty isLeader;
     private boolean gameStarted = false;
-    private Space ui;
+    private Space lobby;
     private boolean dragging;
     private GameOptionsController gameOpCon;
     private Parent chooseWordPane;
@@ -88,7 +88,7 @@ public class GameController {
     public GameController(Pane r, TaskInfo ti) {
         root = r;
         taskInfo = ti;
-        ui = new SequentialSpace();
+        lobby = ti.getLobby();
         sop = new SimpleObjectProperty();
         ssp = new SimpleStringProperty();
         isLeader = new SimpleBooleanProperty(false);
@@ -98,7 +98,7 @@ public class GameController {
     @FXML
     public void initialize() {
         // Starts readies the Game thread
-        gut = new GameUserTask(taskInfo, ui);
+        gut = new GameUserTask(taskInfo);
 
         // Initial window setup
         ((Stage) root.getScene().getWindow()).setOnCloseRequest(windowEvent -> gut.cancel());
@@ -212,12 +212,12 @@ public class GameController {
                     e.printStackTrace();
                 }
 
+                // GAMESTART button
                 gameOpCon.startGameButton.setDisable(true);
-
                 gameOpCon.startGameButton.setOnAction(actionEvent -> {
                     try {
                         int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
-                        ui.put(RoomFlag.GAMESTART, playerID, data);
+                        lobby.put(RoomFlag.GAMESTART, playerID, data);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -238,7 +238,7 @@ public class GameController {
         chatTextField.setOnKeyPressed(keyEvent -> {
             try {
                 if (keyEvent.getCode().equals(KeyCode.ENTER)&&!chatTextField.getText().isEmpty()) {
-                    ui.put(RoomFlag.MESSAGE,playerID,chatTextField.getText());
+                    lobby.put(RoomFlag.MESSAGE,playerID,chatTextField.getText());
                     System.out.println("GameController put: " + chatTextField.getText());
                     chatTextField.setText("");
                 }
@@ -317,7 +317,7 @@ public class GameController {
             try {
                 String tmp = ((Button) actionEvent.getSource()).getText();
                 // Send WordChosen
-                ui.put(RoomFlag.WORDCHOSEN,playerID,tmp);
+                lobby.put(RoomFlag.WORDCHOSEN,playerID,tmp);
                 currentWordLabel.setText(tmp);
                 canvasPaneRoot.getChildren().clear();
             } catch (InterruptedException e) {
@@ -359,7 +359,7 @@ public class GameController {
     void releaseTool(MouseEvent event) {
         dragging = false;
         try {
-            ui.put(RoomFlag.CANVAS,playerID,mouseInfo);
+            lobby.put(RoomFlag.CANVAS,playerID,mouseInfo);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

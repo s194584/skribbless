@@ -53,16 +53,16 @@ public class UserTask extends Task {
             // Helper
             Object[] response;
 
-            // projection 1
+            // Projection 1
             System.out.println("proj1");
             connect();
-            // projection 2
+            // Projection 2
             if (isConnected()) {
                 System.out.println("proj2then");
-                // projection 3
+                // Projection 3
                 System.out.println("proj3");
                 serverSpace.put(ServerFlag.CONNECTED, "");
-                // projection 4
+                // Projection 4
                 System.out.println("proj4");
                 id = (int) serverSpace.get(new FormalField(Integer.class))[0];
                 System.out.println("Client got id: " + id);
@@ -71,42 +71,42 @@ public class UserTask extends Task {
                 ActualField cToU = new ActualField("creation" + id + "user");
                 String uToC = "user" + id + "creation";
 
-                // projection 7
+                // Projection 7
                 System.out.println("proj7");
                 serverSpace.put(uToC, action, roomName);
-                // projection 8
+                // Projection 8
                 System.out.println("proj8");
                 String branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
                 System.out.println("Client branches: " + branch);
                 if (branch.equals("then")) {
-                    // projection 15
+                    // Projection 15
                     System.out.println("proj15");
                     response = serverSpace.get(cToU,new FormalField(Boolean.class),new FormalField(String.class));
                 } else {
-                    // projection 18
+                    // Projection 18
                     System.out.println("proj18");
                     response = serverSpace.get(cToU,new FormalField(Boolean.class),new FormalField(String.class));
                 }
-                // projection 19
+                // Projection 19
                 System.out.println("proj19");
                 if ((Boolean) response[1]) {
                     System.out.println("proj19then");
-                    // projection 20
+                    // Projection 20
                     System.out.println("proj20");
                     connectToRoom((String) response[2]);
-                    // projection 21
+                    // Projection 21
                     System.out.println("proj21");
                     connected();
                 } else {
                     System.out.println("proj19else");
-                    // projection 22
+                    // Projection 22
                     System.out.println("proj22");
                     notConnected();
                 }
 
             } else {
                 System.out.println("proj2else");
-                // projection 23
+                // Projection 23
                 System.out.println("proj23");
                 notConnected();
             }

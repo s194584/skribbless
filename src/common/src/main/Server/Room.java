@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import org.jspace.*;
 
 import java.util.*;
+import java.util.function.BooleanSupplier;
 
 public class Room implements Runnable {
     protected SpaceRepository repo;
@@ -77,14 +78,15 @@ public class Room implements Runnable {
                         lobby.put(playerID, createName(playerID), isLeader);
 
                         System.out.println("User: " + message[1].toString() + " has connected");
+
                         // Alternative
                         user.setLeader(isLeader);
                         users.add(user);
 
                         User[] userstmp = new User[users.size()];
                         broadcastToInboxes(RoomResponseFlag.NEWPLAYER,users.toArray(userstmp));
-
                         break;
+
                     case DISCONNECTED:
                         // Remove inbox from list and repo.
                         System.out.println("User disconnected");
@@ -101,6 +103,7 @@ public class Room implements Runnable {
                         // Broadcast that player left to other players.
                         broadcastToInboxes(RoomResponseFlag.PLAYERREMOVED, data);
                         break;
+
                     case CANVAS:
                         broadcastExcept(RoomResponseFlag.CANVAS, data, playerID);
                         break;
@@ -140,8 +143,8 @@ public class Room implements Runnable {
                         broadcastToInboxes(RoomResponseFlag.GAMESTART,gameOptions);
 
                         takeTurnTime = new takeTimeTask();
-
                         nextTurn();
+
                         break;
                     case WORDCHOSEN:
                         gameStarted = true;
@@ -149,6 +152,7 @@ public class Room implements Runnable {
                         timeLeft = turnTime;
                         takeTurnTime = new takeTimeTask();
                         turnTimer.schedule(takeTurnTime,0,1000);
+
                         // Let others know the
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
                         break;
@@ -169,7 +173,7 @@ public class Room implements Runnable {
             broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId()); // UI only
 
         // Stopping timer
-        takeTurnTime.cancel();
+        //takeTurnTime.cancel();
         System.out.println("Moving to next player...");
 
         // Reset guesses
@@ -178,6 +182,8 @@ public class Room implements Runnable {
 
         }
         playerAmountGuessed = 0;
+
+        // Clearing ChosenWord
         currentWord = "";
 
 
@@ -305,9 +311,14 @@ public class Room implements Runnable {
     class takeTimeTask extends TimerTask {
         @Override
         public void run() {
+            if(Room.this.currentWord.equals("")){
+                this.cancel();
+                return;
+            }
             if(Room.this.timeLeft == 0){
                 nextTurn();
                 this.cancel();
+                return;
             }
             broadcastToInboxes(RoomResponseFlag.TIMETICK, Room.this.timeLeft);
             Room.this.timeLeft--;
