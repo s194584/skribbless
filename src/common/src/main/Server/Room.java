@@ -10,39 +10,55 @@ import org.jspace.*;
 
 import java.util.*;
 
+/**
+ * The main task of the Room thread is to handle all game logic. This includes:'
+ * - Broadcasting data from one player to the others
+ * - Filtering incoming messages for the correct word and assign points accordingly
+ * - Keeping track of time
+ * - Informing players of game changes such as starting the game, new turns and ending the game.
+ */
+
 public class Room implements Runnable {
     protected SpaceRepository repo;
     protected Space serverSpace;
     protected Space lobby;
 
     protected String roomName;
-    protected String currentWord = "notnull"; //The word which is being drawn
-    protected int numberOfRounds;
-    protected int turnTime;
-    protected int timeLeft;
+    protected String currentWord = ""; //The word which is being drawn
+    protected int numberOfRounds; //UI only
     protected int turnNumber = -1;
+    // Keeps track of when to end the game.
+    protected int totalTurns;
+    protected int amountOfTurns = 0;
 
     protected int playerAmount = 0;
-    protected int playerAmountGuessed = 0;
+    protected int playerAmountGuessed = 0; // How many players guessed the word
     protected ArrayList<User> users = new ArrayList<>();
     protected HashMap<Integer, Space> playerInboxes = new HashMap<>();
     protected HashMap<Integer, String> playerNames = new HashMap<>(); //This is used for messages in the chat.
     protected HashMap<Integer, Boolean> playerGuessed = new HashMap<>();
+    protected Template receiveTemplate; // The template used for receiving messages
 
     // Timer
+    protected int turnTime;
+    protected int timeLeft;
     Timer turnTimer;
     TimerTask takeTurnTime;
-    private boolean gameStarted = false;
+    private boolean gameAFoot = false;
 
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
     // projection 7 (only created if branch == then is taken)
-    public Room(SpaceRepository repo,String roomName,Space serverSpace) throws InterruptedException {
+    public Room(SpaceRepository repo, String roomName, Space serverSpace) throws InterruptedException {
         this.repo = repo;
         this.roomName = roomName;
         this.serverSpace = serverSpace;
         lobby = new SequentialSpace();
         repo.add(roomName, lobby);
+        receiveTemplate = new Template(
+                new FormalField(RoomFlag.class),
+                new FormalField(Integer.class),
+                new FormalField(Object.class));
     }
 
     @Override
@@ -57,100 +73,65 @@ public class Room implements Runnable {
 
             while (true) {
 
-                Object[] message = lobby.get(new FormalField(RoomFlag.class),
-                        new FormalField(Integer.class),
-                        new FormalField(Object.class));
+                // Get input from users and handle it
+                Object[] message = lobby.get(receiveTemplate.getFields());
                 int playerID = (int) message[1];
                 Object data = message[2];
 
                 System.out.println(roomName + " got message: " + message[0]);
                 switch ((RoomFlag) message[0]) {
                     case CONNECTED:
-                        User user = ((User) data);
-                        //Generate inboxSpace and sent connection string, back to user. Add user to list
-                        boolean isLeader = playerAmount == 0;
-                        addPlayer(playerID);
-                        playerNames.put(playerID, user.getName());
-                        playerGuessed.put(playerID,false);
+                        connected(playerID, (User) data);
 
-                        // Provide inbox to connected player
-                        lobby.put(playerID, createName(playerID), isLeader);
-
-                        System.out.println("User: " + message[1].toString() + " has connected");
-
-                        // Alternative
-                        user.setLeader(isLeader);
-                        users.add(user);
-
+                        // Broadcast all users to users.
                         User[] userstmp = new User[users.size()];
-                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER,users.toArray(userstmp));
+                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER, users.toArray(userstmp));
                         break;
 
                     case DISCONNECTED:
                         // Remove inbox from list and repo.
                         System.out.println("User disconnected");
-                        removePlayer(playerID);
-                        users.remove(data);
+                        removePlayer(playerID, (User) data);
 
-                        // Select new leader if leader left.
                         //TODO: Select new leader if leader left.
-                        if(users.size()==0){
-                            System.out.println("No more player. Closing...");
-                            serverSpace.put(ServerFlag.SETROOM,roomName);
-                            return;
-                        }
+
+                        // Check if room-thread should close
+                        if (closingCheck()) return;
+
                         // Broadcast that player left to other players.
                         broadcastToInboxes(RoomResponseFlag.PLAYERREMOVED, data);
                         break;
-
                     case CANVAS:
                         broadcastExcept(RoomResponseFlag.CANVAS, data, playerID);
                         break;
                     case MESSAGE:
-                        boolean correct = filterMessage(data);
-                        if (gameStarted&&(playerID!=users.get(turnNumber).getId())&&correct&&!playerGuessed.get(playerID)) {
-                            // Calculate score for guesser and drawer
-                            for (User u: users) {
-                                if(u.getId()==playerID){
-                                    u.addScore(timeLeft*10+(currentWord.length()*10));
-                                    users.get(turnNumber).addScore(100+(currentWord.length()*10));
-                                    broadcastToInboxes(RoomResponseFlag.ADDPOINTS, new User[]{u, users.get(turnNumber)});
-                                }
-                            }
-                            playerGuessed.put(playerID,true);
-                            playerAmountGuessed++;
-                            TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
-                            TextInfo textInfoSelf = createTextToSelf(data, playerNames.get(playerID));
-                            broadcastExcept(RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
-                            broadcastToOne(RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
-                        } else if(!correct){
-                            TextInfo textInfo = createText(data, playerNames.get(playerID));
-                            broadcastToInboxes(RoomResponseFlag.MESSAGE, textInfo);
-                        }
+                        filterAndBroadcastMessage(playerID, data);
 
                         // Reset guesses when all have guessed the word
-                        if(gameStarted&&playerAmountGuessed==playerAmount-1){
+                        if (gameAFoot && playerAmountGuessed == playerAmount - 1) {
                             nextTurn();
                         }
                         break;
-                    case GAMESTART:
+                    case GAMESTART: //Get important data and broadcast it
                         int gameOptions[] = (int[]) data;
                         numberOfRounds = gameOptions[0];
+                        totalTurns = numberOfRounds * playerAmount;
                         turnTime = gameOptions[1];
 
                         // UI and sync
-                        broadcastToInboxes(RoomResponseFlag.GAMESTART,gameOptions);
+                        broadcastToInboxes(RoomResponseFlag.GAMESTART, gameOptions);
 
                         takeTurnTime = new takeTimeTask();
                         nextTurn();
 
                         break;
                     case WORDCHOSEN:
-                        gameStarted = true;
+                        // Set up different fields
+                        gameAFoot = true;
                         currentWord = data.toString();
                         timeLeft = turnTime;
                         takeTurnTime = new takeTimeTask();
-                        turnTimer.schedule(takeTurnTime,0,1000);
+                        turnTimer.schedule(takeTurnTime, 0, 1000);
 
                         // Let others know the
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
@@ -169,47 +150,133 @@ public class Room implements Runnable {
         }
     }
 
+    // This method handles all necessary logic for choosing the next player and stopping the game if needed.
     private void nextTurn() {
         // Stop drawing for last player
-        if(gameStarted)
-            broadcastToOne(RoomResponseFlag.STOPDRAW,0, users.get(turnNumber).getId()); // UI only
+        if (gameAFoot)
+            broadcastToOne(RoomResponseFlag.STOPDRAW, 0, users.get(turnNumber).getId()); // UI only
 
         // Stopping timer
-        //takeTurnTime.cancel();
         System.out.println("Moving to next player...");
 
         // Reset guesses
-        for (Integer k:playerGuessed.keySet()) {
-            playerGuessed.put(k,false);
+        for (Integer k : playerGuessed.keySet()) {
+            playerGuessed.put(k, false);
 
         }
         playerAmountGuessed = 0;
 
         // Clearing ChosenWord
+        // We use an empty string since the Users are prevented from sending empty strings,
+        // and thus the room should never receive empty words
         currentWord = "";
 
-
-
-        // Lets it go around in a circle
-        if (users.size()-1 == turnNumber) {
+        // Allows turns
+        if (users.size() - 1 == turnNumber) {
             numberOfRounds--;
             turnNumber = -1;
-            broadcastToInboxes(RoomResponseFlag.NEXTROUND,numberOfRounds); // UI only
+            broadcastToInboxes(RoomResponseFlag.NEXTROUND, numberOfRounds); // UI only
         }
 
-        // Break if number of rounds is reached
-        if (numberOfRounds == 0) {
+        // End game if totalTurns is reached
+        if (amountOfTurns == totalTurns) {
+            gameAFoot = false;
             rankUsers();
             User[] userstmp = new User[users.size()];
-            broadcastToInboxes(RoomResponseFlag.ENDGAME,users.toArray(userstmp)); // Update UI at clients
+            broadcastToInboxes(RoomResponseFlag.ENDGAME, users.toArray(userstmp)); // Update UI at clients
             return;
         }
 
 
         // Prompts the next player with word choice
+        // And updates variables
+        amountOfTurns++;
         turnNumber++;
         String possibleWords[] = generateWords();
-        broadcastToOne(RoomResponseFlag.CHOOSEWORD,possibleWords,(users.get(turnNumber)).getId());
+        broadcastToOne(RoomResponseFlag.CHOOSEWORD, possibleWords, (users.get(turnNumber)).getId());
+    }
+
+    private void filterAndBroadcastMessage(int playerID, Object data) {
+        boolean correct = filterMessage(data);
+        if (gameAFoot && (playerID != users.get(turnNumber).getId()) && correct && !playerGuessed.get(playerID)) {
+            // Calculate score for guesser and drawer
+            calculateScore(playerID);
+
+            playerGuessed.put(playerID, true);
+            playerAmountGuessed++;
+            TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
+            TextInfo textInfoSelf = createTextToSelf(data, playerNames.get(playerID));
+            broadcastExcept(RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
+            broadcastToOne(RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
+        } else if (!correct) {
+            TextInfo textInfo = createText(data, playerNames.get(playerID));
+            broadcastToInboxes(RoomResponseFlag.MESSAGE, textInfo);
+        }
+    }
+
+    // Creates the text with color coding to be broadcasted
+    private TextInfo createTextToOthers(Object data, String playerName) {
+        return new TextInfo(playerName + ": " + "Guessed the word!", (Color.GREEN).toString());
+    }
+
+    // Creates text to your self if you guessed the word
+    private TextInfo createTextToSelf(Object data, String playerName) {
+        return new TextInfo("You Guessed the word!", (Color.GREEN).toString());
+    }
+
+    // normal text parsed through.
+    private TextInfo createText(Object data, String playerName) {
+        return new TextInfo(playerName + ": " + data.toString(), (Color.BLACK).toString());
+    }
+
+    // Returns true if player guessed current word.
+    private boolean filterMessage(Object data) {
+        if (data.toString().isEmpty()) {
+            return false;
+        }
+        return currentWord.equals(data.toString());
+    }
+
+    // Calculate scores if guessed correctly
+    private void calculateScore(int playerID) {
+        for (User u : users) {
+            if (u.getId() == playerID) {
+                u.addScore(timeLeft * 10 + (currentWord.length() * 10));
+                users.get(turnNumber).addScore(100 + (currentWord.length() * 10));
+                broadcastToInboxes(RoomResponseFlag.ADDPOINTS, new User[]{u, users.get(turnNumber)});
+            }
+        }
+    }
+
+    // Checks if room-thread should terminate
+    private boolean closingCheck() throws InterruptedException {
+        if (users.size() == 0) {
+            System.out.println("No more players. Closing...");
+            serverSpace.put(ServerFlag.SETROOM, roomName);
+            // Cancel the timer task if it is set
+            if (takeTurnTime != null) {
+                takeTurnTime.cancel();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // Adds user to important places
+    private void connected(int playerID, User data) throws InterruptedException {
+        User user = data;
+        // Generate inboxSpace and sent connection string, back to user.
+        // Add user to lists
+        boolean isLeader = playerAmount == 0;
+        addPlayer(playerID, user);
+
+        // Provide inbox to connected player
+        lobby.put(playerID, createName(playerID), isLeader);
+
+        System.out.println("User: " + playerID + " has connected");
+
+        user.setLeader(isLeader);
+        users.add(user);
     }
 
     private void rankUsers() {
@@ -220,6 +287,8 @@ public class Room implements Runnable {
         return WordUtil.generateWords();
     }
 
+
+    // Broadcast to the inbox of the given playerID.
     private void broadcastToOne(RoomResponseFlag flag, Object data, int playerID) {
         try {
             (playerInboxes.get(playerID)).put(flag, data);
@@ -229,6 +298,7 @@ public class Room implements Runnable {
 
     }
 
+    // Broadcast to all inboxes except the one of the given playerID.
     private void broadcastExcept(RoomResponseFlag flag, Object data, int playerID) {
         try {
             for (Map.Entry<Integer, Space> set : playerInboxes.entrySet()) {
@@ -240,44 +310,7 @@ public class Room implements Runnable {
         }
     }
 
-    //Creates the text with color coding to be broadcasted
-    private TextInfo createTextToOthers(Object data, String playerName) {
-        return new TextInfo(playerName + ": " + "Guessed the word!", (Color.GREEN).toString());
-    }
-
-    private TextInfo createTextToSelf(Object data, String playerName) {
-        return new TextInfo("You Guessed the word!", (Color.GREEN).toString());
-    }
-
-    private TextInfo createText(Object data, String playerName) {
-        return new TextInfo(playerName + ": " + data.toString(), (Color.BLACK).toString());
-    }
-
-    private boolean filterMessage(Object data) {
-        if(data.toString().isEmpty()){
-            return false;
-        }
-        return currentWord.equals(data.toString());
-    }
-
-    private void broadcastUsersToInbox(RoomResponseFlag flag, Space inbox) {
-        try {
-            for (User user : users) {
-                inbox.put(flag, user);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void removePlayer(int playerID) {
-        String inboxName = createName(playerID);
-        repo.remove(inboxName);
-        playerInboxes.remove(playerID);
-        playerGuessed.remove(playerID);
-        playerAmount--;
-    }
-
+    // Broadcast to all inboxes.
     private void broadcastToInboxes(RoomResponseFlag flag, Object data) {
         try {
             for (Space inbox : playerInboxes.values()) {
@@ -288,12 +321,26 @@ public class Room implements Runnable {
         }
     }
 
-    private void addPlayer(int playerID) {
+    // Removes player from different lists/maps
+    private void removePlayer(int playerID, User user) {
+        String inboxName = createName(playerID);
+        repo.remove(inboxName);
+        users.remove(user);
+        playerInboxes.remove(playerID);
+        playerGuessed.remove(playerID);
+        playerAmount--;
+    }
+
+    // Adds player to different lists/maps
+    private void addPlayer(int playerID, User user) {
         Space inbox = generateInbox(playerID);
         playerInboxes.put(playerID, inbox);
+        playerNames.put(playerID, user.getName());
+        playerGuessed.put(playerID, false);
         playerAmount++;
     }
 
+    // Generate inbox tuple space and add it to the repo.
     private Space generateInbox(int playerID) {
         Space inbox = new SequentialSpace();
         repo.add(createName(playerID), inbox);
@@ -308,16 +355,15 @@ public class Room implements Runnable {
         return lobby;
     }
 
-
-
+    // The timer thread
     class takeTimeTask extends TimerTask {
         @Override
         public void run() {
-            if(Room.this.currentWord.equals("")){
+            if (Room.this.currentWord.equals("")) {
                 this.cancel();
                 return;
             }
-            if(Room.this.timeLeft == 0){
+            if (Room.this.timeLeft == 0) {
                 nextTurn();
                 this.cancel();
                 return;
@@ -326,7 +372,6 @@ public class Room implements Runnable {
             Room.this.timeLeft--;
         }
     }
-
 
 
 }
