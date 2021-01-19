@@ -4,10 +4,13 @@ import common.src.main.Enum.CanvasColor;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 
-import java.util.HashMap;
 import java.util.Map;
+
+/**
+ * This class is responsible for mapping the colors of the enum CanvasColor to the javafx color objects.
+ * The reason for this is that javafx objects cannot be serialized.
+ */
 
 public class ColorMap {
 
@@ -23,10 +26,11 @@ public class ColorMap {
             CanvasColor.ORANGE, Color.ORANGE
     );
 
-    public static ObservableList<String> getColorList(){
+    // Return list for the ComboBox used in GameController.
+    public static ObservableList<String> getColorList() {
         String[] tmp = new String[CanvasColor.values().length];
         int count = 0;
-        for (CanvasColor cv: CanvasColor.values()) {
+        for (CanvasColor cv : CanvasColor.values()) {
             tmp[count] = cv.toString();
             count++;
         }
@@ -36,6 +40,5 @@ public class ColorMap {
     public static Color getColor(CanvasColor c) {
         return colorMap.get(c);
     }
-
 
 }

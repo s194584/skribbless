@@ -10,6 +10,12 @@ import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 import org.jspace.Space;
 
+/**
+ * Initially responsible for communicating with the room thread, and retrieving the players inbox.
+ * After this the thread becomes an entry point for messages from the Room to the inbox which are then parsed through
+ * the update value method as to not block the JavaFx thread (GameController).
+ */
+
 public class GameUserTask extends Task {
     User user;
     int userId;
@@ -33,29 +39,30 @@ public class GameUserTask extends Task {
         System.out.println("Got response from room:" + roomResponse[1] + " isleader: " + roomResponse[2]);
         inbox = new RemoteSpace(makeUri(roomResponse[1].toString()));
         this.isLeader = (boolean) roomResponse[2];
-        //send isLeader to GameController
+
+        // Send isLeader to GameController
         updateMessage("" + isLeader);
 
         // GameUserTask now becomes an inbox and reads the inbox and notifies ui (GameController).
         while (true) {
             if (isCancelled()) {
-                lobby.put(RoomFlag.DISCONNECTED,userId,user);
                 return -1;
             }
 
             Object[] message = inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class));
-            if(message[0] == RoomResponseFlag.STARTTURN){
+            if (message[0] == RoomResponseFlag.STARTTURN) {
                 System.out.println(message[1]);
             }
             updateValue(message);
         }
     }
 
+    // Handles if the user disconnects. The thread is then cancelled from the GameController.
     @Override
     protected void cancelled() {
         super.cancelled();
         try {
-            lobby.put(RoomFlag.DISCONNECTED,userId,user);
+            lobby.put(RoomFlag.DISCONNECTED, userId, user);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

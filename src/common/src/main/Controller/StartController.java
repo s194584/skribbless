@@ -17,6 +17,9 @@ import org.jspace.Space;
 
 import java.io.IOException;
 
+/**
+ * The initial controller responsible for handling the user inputs in the initial start screen (see start.fxml)
+ */
 
 public class StartController {
     @FXML
@@ -91,34 +94,5 @@ public class StartController {
         ui.put(UiFlag.ROOMNAME,"");
         ui.put(UiFlag.ACTION, ServerFlag.HOST);
     }
-
-//    @FXML
-//    public void initialize(){
-//        task = new Task<Integer>() {
-//            public SimpleStringProperty labelString = new SimpleStringProperty("Start");
-//            @Override
-//            protected Integer call() throws Exception {
-//                while(!isCancelled()) {
-//                    Object[] t = space.getp(new FormalField(String.class));
-//
-//
-//                    if (t==null){
-//                        continue;
-//                    }
-//                    updateMessage(t[0].toString());
-//                }
-//                return 1;
-//            }
-//        };
-//        System.out.println("Initcontroller");
-//        Thread th = new Thread(task);
-//        th.setDaemon(true);
-//        th.start();
-//
-//        label.textProperty().bind(task.messageProperty());
-//        System.out.println("Thread activated");
-//
-//    }
-
 
 }

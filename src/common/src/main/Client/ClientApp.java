@@ -7,9 +7,16 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * The users is launched from here, and the controller is set.
+ */
+
+
 public class ClientApp extends Application {
     //--module-path ${JAVAFX_11} --add-modules=javafx.fxml,javafx.controls
-    public static void main(String[] args) {launch(args);}
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage stage) throws Exception {

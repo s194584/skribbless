@@ -5,6 +5,10 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 
+/**
+ * A controller for the screen showed when the player is prompted to choose a word.
+ */
+
 
 public class ChooseWordController {
     @FXML
@@ -16,7 +20,8 @@ public class ChooseWordController {
     @FXML
     Button chooseWordBtn3;
 
-    public ChooseWordController() {}
+    public ChooseWordController() {
+    }
 
     public void setupButtons(String[] wordsInfo) {
         chooseWordBtn1.setText(wordsInfo[0]);

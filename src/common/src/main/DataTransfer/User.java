@@ -5,6 +5,7 @@ package common.src.main.DataTransfer;
  */
 
 public class User {
+    //This is currently a placeholder for some kind of character the player can choose. Not yet implemented
     private final String character;
     private final String name;
     private final int id;

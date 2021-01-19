@@ -9,6 +9,10 @@ import javafx.scene.layout.Pane;
 
 import java.io.IOException;
 
+/**
+ * This is a pure UI class used to fill up the ListView
+ */
+
 public class UserListViewCell extends ListCell<User> {
 
     @FXML
@@ -33,13 +37,13 @@ public class UserListViewCell extends ListCell<User> {
         setText(null);
 
         // Return if there is no user or the item is empty
-        if(user==null|| b){
+        if (user == null || b) {
             setGraphic(null);
             return;
         }
 
         // Load usercard if it is the first time loading
-        if(fxmlLoader == null){
+        if (fxmlLoader == null) {
             try {
                 fxmlLoader = new FXMLLoader();
                 fxmlLoader.setLocation(getClass().getResource("/usercard.fxml"));
@@ -53,7 +57,7 @@ public class UserListViewCell extends ListCell<User> {
         // Set the ui for the card
         characterLabel.setText(user.getCharacter());
         nameLabel.setText(user.getName());
-        pointLabel.setText(""+user.getScore());
+        pointLabel.setText("" + user.getScore());
 
         // Set the cell graphic to root pane
         setGraphic(root);
