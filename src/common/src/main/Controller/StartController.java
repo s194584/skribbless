@@ -1,27 +1,17 @@
-package common.src.main.Client;
+package common.src.main.Controller;
 
-import common.src.main.Client.GameController;
 import common.src.main.Client.UserTask;
 import common.src.main.Enum.ServerFlag;
 import common.src.main.Enum.UiFlag;
-import javafx.application.Platform;
-import javafx.beans.binding.StringBinding;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Task;
-import javafx.concurrent.Worker;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import org.jspace.FormalField;
 import org.jspace.SequentialSpace;
 import org.jspace.Space;
 

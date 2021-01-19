@@ -1,15 +1,13 @@
 package common.src.main.Client;
 
 
-import common.src.main.Server.Server;
+import common.src.main.DataTransfer.TaskInfo;
 import javafx.concurrent.Task;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import common.src.main.Enum.*;
 import org.jspace.Space;

@@ -1,8 +1,9 @@
 package common.src.main.Client;
 
+import common.src.main.DataTransfer.TaskInfo;
+import common.src.main.DataTransfer.User;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
@@ -63,6 +64,5 @@ public class GameUserTask extends Task {
     private String makeUri(String identifier) {
         return "tcp://" + hostPort + "/" + identifier + "?keep";
     }
-
 
 }

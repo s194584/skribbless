@@ -1,5 +1,6 @@
 package common.src.main.Client;
 
+import common.src.main.Controller.StartController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

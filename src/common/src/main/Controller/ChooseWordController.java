@@ -1,4 +1,4 @@
-package common.src.main.Client;
+package common.src.main.Controller;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;

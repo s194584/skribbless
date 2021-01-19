@@ -1,7 +1,12 @@
-package common.src.main.Client;
+package common.src.main.DataTransfer;
 
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+
+/**
+ *   Data transfer object for messages between clients.
+ *   Made so color coding can also be parsed
+ */
 
 public class TextInfo {
    private String content;

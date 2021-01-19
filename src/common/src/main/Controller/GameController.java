@@ -1,6 +1,13 @@
-package common.src.main.Client;
+package common.src.main.Controller;
 
 
+import common.src.main.Client.ColorMap;
+import common.src.main.Client.GameUserTask;
+import common.src.main.Client.UserListViewCell;
+import common.src.main.DataTransfer.MouseInfo;
+import common.src.main.DataTransfer.TaskInfo;
+import common.src.main.DataTransfer.TextInfo;
+import common.src.main.DataTransfer.User;
 import common.src.main.Enum.CanvasColor;
 import common.src.main.Enum.CanvasTool;
 import common.src.main.Enum.RoomFlag;
@@ -29,7 +36,6 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.jspace.SequentialSpace;
 import org.jspace.Space;
 
 import java.io.IOException;

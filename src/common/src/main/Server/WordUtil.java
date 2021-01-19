@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+/**
+ *   Util class that is responsible for storing all possible words and selecting three random when prompted.
+ */
+
 public class WordUtil {
 
     private static String words[] = {"delay",
             "vehicle",
-            //Added by Victoria
             "rainbow",
             "pasta",
             "couch",
@@ -20,16 +23,12 @@ public class WordUtil {
             "scarf",
             "calculator",
             "gnome",
-            //"christmas lights",
             "STONKS",
-            //"computer mouse",
             "eyelash",
             "maze",
             "field",
             "kiss",
             "pacifier",
-
-            //
             "auction",
             "fire",
             "hurt",

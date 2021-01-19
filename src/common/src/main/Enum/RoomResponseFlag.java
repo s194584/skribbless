@@ -1,5 +1,9 @@
 package common.src.main.Enum;
 
+/**
+ *   Flags the room class uses to respond to clients with
+ */
+
 public enum RoomResponseFlag {
     NEWPLAYER,
     PLAYERREMOVED,
@@ -11,5 +15,6 @@ public enum RoomResponseFlag {
     TIMETICK,
     NEXTROUND,
     ENDGAME,
-    STOPDRAW, ADDPOINTS
+    STOPDRAW,
+    ADDPOINTS
 }

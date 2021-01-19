@@ -1,5 +1,6 @@
 package common.src.main.Client;
 
+import common.src.main.DataTransfer.User;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;

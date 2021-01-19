@@ -1,15 +1,14 @@
 package common.src.main.Server;
 
-import common.src.main.Client.TextInfo;
+import common.src.main.DataTransfer.TextInfo;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import common.src.main.Enum.ServerFlag;
-import common.src.main.Client.User;
+import common.src.main.DataTransfer.User;
 import javafx.scene.paint.Color;
 import org.jspace.*;
 
 import java.util.*;
-import java.util.function.BooleanSupplier;
 
 public class Room implements Runnable {
     protected SpaceRepository repo;
@@ -155,6 +154,9 @@ public class Room implements Runnable {
 
                         // Let others know the
                         broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
+                        break;
+                    default:
+                        // If an unknown flag is received nothing is done.
                         break;
                 }
 

@@ -1,6 +1,10 @@
-package common.src.main.Client;
+package common.src.main.DataTransfer;
 
 import org.jspace.Space;
+
+/**
+ *   Data Transfer object used when moving from initial logic to game logic
+ */
 
 public class TaskInfo {
     private String name;

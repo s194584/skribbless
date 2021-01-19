@@ -1,9 +1,15 @@
-package common.src.main.Client;
+package common.src.main.DataTransfer;
 
 import common.src.main.Enum.CanvasColor;
 import common.src.main.Enum.CanvasTool;
 
 import java.util.ArrayList;
+
+/**
+ *   Data Transfer object made to transfer the drawing through a tuple space.
+ *   It does so using mouse positions and a color enum
+ */
+
 
 public class MouseInfo {
 

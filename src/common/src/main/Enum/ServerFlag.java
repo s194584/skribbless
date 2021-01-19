@@ -1,6 +1,10 @@
 package common.src.main.Enum;
 
-//These are the initial messages a user can send to the server
+/**
+ *   Flags used to communicate with the server
+ */
+
+
 public enum ServerFlag {
     //These are user request
     CONNECTED,

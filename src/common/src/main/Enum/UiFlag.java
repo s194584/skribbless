@@ -1,9 +1,12 @@
 package common.src.main.Enum;
 
+/**
+ *   Flags used to send ui updates from StartController to UserTask
+ */
+
 public enum UiFlag {
-    // To UserTask
-    IP,NAME,ROOMNAME,ACTION,
-
-    CURSOR
-
+    IP,
+    NAME,
+    ROOMNAME,
+    ACTION,
 }

@@ -1,4 +1,8 @@
-package common.src.main.Client;
+package common.src.main.DataTransfer;
+
+/**
+ *   Data transfer object made to easily transfer information about a user/client in one object
+ */
 
 public class User {
     private final String character;
