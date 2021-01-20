@@ -35,8 +35,12 @@ public class Server {
             repository.add("serverSpace", space);
 
             // the hosting port, which is currently hard coded.
-            // TODO: Mabey make this not hard coded
-            String gateUri = "tcp://localhost:9001/?keep";
+            String gateUri = "";
+            if (args.length==1){
+                gateUri = "tcp://"+args[0]+"/?keep";
+            } else {
+                gateUri = "tcp://localhost:9001/?keep";
+            }
             System.out.println("Opening repository gate at " + gateUri + "...");
             repository.addGate(gateUri);
 
@@ -66,8 +70,6 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private static void openCreationHandler(int id, SequentialSpace space, SpaceRepository repository) {
