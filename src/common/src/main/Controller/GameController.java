@@ -40,15 +40,14 @@ import org.jspace.Space;
 
 import java.io.IOException;
 
-public class GameController {
+/**
+ * The GameController is responsible for handling all ui updates during the game, and sending important updates
+ * to the lobby space so the room can make decisions on the user input.
+ */
 
-    private Pane root;
-    private TaskInfo taskInfo;
-    private int playerID;
+public class GameController {
     @FXML
     Pane gamePane;
-    @FXML
-    Button quitButton;
     @FXML
     ListView userListView;
     @FXML
@@ -70,25 +69,35 @@ public class GameController {
     @FXML
     Canvas canvas;
 
+    // Canvas variables
     GraphicsContext gc;
+    private MouseInfo mouseInfo; // The data transfer object that put in the lobby when the user releases then mouse.
+    double prevX, prevY; // Previous mouse position.
+    private boolean dragging;
 
-    double prevX,prevY;
-
-    private ObservableList<User> users = FXCollections.observableArrayList();
+    // GameUserTask variables
     private GameUserTask gut;
-    private SimpleObjectProperty sop;
-    private SimpleStringProperty ssp;
+    private SimpleObjectProperty sop; // Binding object for the value binding
+    private SimpleStringProperty ssp; // Binding object for the message binding
+
+    // JavaFX panes
+    private Pane root;
+    private Parent chooseWordPane;
+
+    // Controllers
+    private ChooseWordController cwCon;
+    private GameOptionsController gameOpCon;
+
+    // lobby
+    private Space lobby;
+
+    // data objects
+    private ObservableList<User> users = FXCollections.observableArrayList();
     private SimpleBooleanProperty isLeader;
     private boolean gameStarted = false;
-    private Space lobby;
-    private boolean dragging;
-    private GameOptionsController gameOpCon;
-    private Parent chooseWordPane;
-    private ChooseWordController cwCon;
+    private TaskInfo taskInfo;
+    private int playerID;
     private boolean myTurn;
-
-    private MouseInfo mouseInfo;
-
 
 
     public GameController(Pane r, TaskInfo ti) {
@@ -113,126 +122,26 @@ public class GameController {
         userListView.setMouseTransparent(true);
         userListView.setFocusTraversable(false);
 
-
-        //make chooseWord loader:
+        // Make chooseWord loader:
         setupChooseWord(playerID);
         setupCanvas();
 
-        //Setting up color box.
+        // Setting up color box.
         ObservableList<String> colorsList = ColorMap.getColorList();
         colorComboBox.setItems(colorsList);
         colorComboBox.setValue(colorsList.get(0));
 
-
+        // Create bindings and their listeners
         sop.bind(gut.valueProperty());
         ssp.bind(gut.messageProperty());
 
-        sop.addListener((observableValue, oldValue, newValue) -> {
-            Object[] message = (Object[]) newValue;
-            RoomResponseFlag flag = (RoomResponseFlag) message[0];
-            Object data = message[1];
-            System.out.println("GameController got flag: " + flag);
+        sop.addListener(this::handelInputs);
 
-            switch (flag) {
-                case NEWPLAYER:
-                    addNewPlayers((User[]) data);
-                    if(isLeader.getValue()&&users.size()>1){
-                        gameOpCon.startGameButton.setDisable(false);
-                    }
-                    break;
-                case PLAYERREMOVED:
-                    removePlayer((User) data);
-                    if(gameOpCon!=null&&users.size()<2){
-                        gameOpCon.startGameButton.setDisable(true);
-                    }
-                    break;
-                case MESSAGE:
-                    updateChat((TextInfo) data);
-                    break;
-                case CANVAS:
-                    Platform.runLater(() -> updateCanvas((MouseInfo) data));
-                    break;
-                case GAMESTART:
-                    int[] gameInfo = (int[]) data;
-                    roundsLeftLabel.setText("" + gameInfo[0]);
-                    timeLabel.setText(gameInfo[1] + " s");
-                    if (isLeader.getValue()) {
-                        canvasPaneRoot.getChildren().clear();
-                    }
-                    break;
-                case CHOOSEWORD:
-                    String[] wordsInfo = (String[]) data;
-                    showChooseWord(wordsInfo);
-                    break;
-                case STARTTURN:
-                    int[] wordAndId = (int[]) data;
-                    myTurn = wordAndId[1]==playerID;
-                    if(!myTurn){
-                        currentWordLabel.setText("_ ".repeat(wordAndId[0]));
-                    }
-                    // Show whose turn it is
-                    userListView.getSelectionModel().select(new User("","",wordAndId[1],0));
+        // the message binding is a pseudo binding for isLeader
+        ssp.addListener(this::isLeaderBinding);
 
-                    canvasPaneRoot.getChildren().clear();
-                    gc.clearRect(0,0,canvas.getWidth(),canvas.getHeight());
-                    canvasPaneRoot.getChildren().add(canvas);
-                    break;
-                case TIMETICK:
-                    timeLabel.setText(data+"s");
-                    break;
-                case NEXTROUND:
-                    roundsLeftLabel.setText(data+"");
-                    break;
-                case ADDPOINTS:
-                    addPoints((User[])data);
-                    userListView.refresh();
-                    break;
-                case STOPDRAW:
-                    myTurn = false;
-                    break;
-                case ENDGAME:
-                    User[] rankedUsers = (User[]) data;
-                    userListView.getParent().setVisible(false);
-                    users.clear();
-                    users.addAll(rankedUsers);
-                    setupGameOver();
-                    break;
-                default:
-                    break;
-            }
-        });
-
-        // this is a pseudo binding for isLeader
-        ssp.addListener((observableValue, oldValue, newValue) -> {
-            isLeader.set(newValue.equals("" + true));
-            if (!gameStarted && isLeader.getValue()) { //TODO: This logic might need to be somewhere else. since we don't acces it except in the begining.
-                System.out.println("GameController setting gameOptions");
-
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
-                gameOpCon = new GameOptionsController();
-                fxmlLoader.setController(gameOpCon);
-
-                try {
-                    canvasPaneRoot.getChildren().add(fxmlLoader.load());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                // GAMESTART button
-                gameOpCon.startGameButton.setDisable(true);
-                gameOpCon.startGameButton.setOnAction(actionEvent -> {
-                    try {
-                        int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
-                        lobby.put(RoomFlag.GAMESTART, playerID, data);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-        });
-
-        // Listerner for users
+        /* Listeners for users
+         Ensures the listview is updated along with the ObservableList of users*/
         userListView.setItems(users);
         userListView.setCellFactory((Callback<ListView, ListCell>) listView -> {
             UserListViewCell ulvc = new UserListViewCell();
@@ -243,8 +152,9 @@ public class GameController {
         //Listener for writing in chat:
         chatTextField.setOnKeyPressed(keyEvent -> {
             try {
-                if (keyEvent.getCode().equals(KeyCode.ENTER)&&!chatTextField.getText().isEmpty()) {
-                    lobby.put(RoomFlag.MESSAGE,playerID,chatTextField.getText());
+                if (keyEvent.getCode().equals(KeyCode.ENTER) && !chatTextField.getText().isEmpty()) {
+                    // Broadcast any messages that is not an empty string.
+                    lobby.put(RoomFlag.MESSAGE, playerID, chatTextField.getText());
                     System.out.println("GameController put: " + chatTextField.getText());
                     chatTextField.setText("");
                 }
@@ -253,14 +163,129 @@ public class GameController {
             }
         });
 
+        // Initialize GameUserTask thread.
         Thread th = new Thread(gut);
         th.setDaemon(true);
         th.start();
     }
 
-    private void addNewPlayers(User[] data) {
-        users.clear();
-        users.addAll(data);
+    // This method handles all input to the inbox from the Room.
+    private void handelInputs(Object observableValue, Object oldValue, Object newValue) {
+        Object[] message = (Object[]) newValue;
+        RoomResponseFlag flag = (RoomResponseFlag) message[0];
+        Object data = message[1];
+        System.out.println("GameController got flag: " + flag);
+
+        switch (flag) {
+            case NEWPLAYER: // Add player and potentially start gameOptions
+                addNewPlayers((User[]) data);
+                if (isLeader.getValue() && users.size() > 1) {
+                    gameOpCon.startGameButton.setDisable(false);
+                }
+                break;
+            case PLAYERREMOVED: // Remove player and potentially disable being able to start the game
+                removePlayer((User) data);
+                if (gameOpCon != null && users.size() < 2) {
+                    gameOpCon.startGameButton.setDisable(true);
+                }
+                break;
+            case MESSAGE: // Update the chat
+                updateChat((TextInfo) data);
+                break;
+            case CANVAS: // Update the canvas
+                // This can be a heavy task so runLater is utilized.
+                Platform.runLater(() -> updateCanvas((MouseInfo) data));
+                break;
+            case GAMESTART: // Set initial data and wait for either chooseword or startturn
+                int[] gameInfo = (int[]) data;
+                roundsLeftLabel.setText("" + gameInfo[0]);
+                timeLabel.setText(gameInfo[1] + " s");
+                if (isLeader.getValue()) {
+                    canvasPaneRoot.getChildren().clear();
+                }
+                break;
+            case CHOOSEWORD: // Prompts user to choose a word
+                String[] wordsInfo = (String[]) data;
+                showChooseWord(wordsInfo);
+                break;
+            case STARTTURN: // Start a new turn depending on if you are drawing or guessing
+                int[] wordAndId = (int[]) data;
+                myTurn = wordAndId[1] == playerID;
+                if (!myTurn) {
+                    currentWordLabel.setText("_ ".repeat(wordAndId[0]));
+                }
+                // Show whose turn it is
+                userListView.getSelectionModel().select(new User("", "", wordAndId[1], 0));
+
+                canvasPaneRoot.getChildren().clear();
+                gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+                canvasPaneRoot.getChildren().add(canvas);
+                break;
+            case TIMETICK: // Update time
+                timeLabel.setText(data + "s");
+                break;
+            case NEXTROUND: // Update roundsleft
+                roundsLeftLabel.setText(data + "");
+                break;
+            case ADDPOINTS: // Update users
+                addPoints((User[]) data);
+                userListView.refresh();
+                break;
+            case STOPDRAW: // disable more drawing inputs from the user
+                myTurn = false;
+                break;
+            case ENDGAME: // Display end screen
+                User[] rankedUsers = (User[]) data;
+                userListView.getParent().setVisible(false);
+                users.clear();
+                users.addAll(rankedUsers);
+                setupGameOver();
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Binding for message value.
+    private void isLeaderBinding(Object observableValue, Object oldValue, Object newValue) {
+        isLeader.set(newValue.equals("" + true));
+        if (!gameStarted && isLeader.getValue()) {
+            System.out.println("GameController setting gameOptions");
+
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
+            gameOpCon = new GameOptionsController();
+            fxmlLoader.setController(gameOpCon);
+
+            try {
+                canvasPaneRoot.getChildren().add(fxmlLoader.load());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // GAMESTART button
+            gameOpCon.startGameButton.setDisable(true);
+            gameOpCon.startGameButton.setOnAction(actionEvent -> {
+                try {
+                    // Get important data and put to lobby
+                    int data[] = {(int) gameOpCon.roundsComboBox.getValue(), (int) gameOpCon.timeComboBox.getValue()};
+                    lobby.put(RoomFlag.GAMESTART, playerID, data);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    private void addPoints(User[] data) {
+        // Incoming users
+        for (User u1 : data) {
+            // List of all users
+            for (User u2 : users) {
+                if (u1.equals(u2)) {
+                    u2.setScore(u1.getScore());
+                }
+            }
+        }
     }
 
     private void setupGameOver() {
@@ -273,38 +298,6 @@ public class GameController {
 
         canvasPaneRoot.getChildren().clear();
         canvasPaneRoot.getChildren().add(gameOverScrollPane);
-    }
-
-    private void addPoints(User[] data) {
-        // Incoming users
-        for (User u1 : data) {
-            // List of all users
-            for (User u2: users) {
-                if (u1.equals(u2)){
-                    u2.setScore(u1.getScore());
-                }
-            }
-        }
-    }
-
-    private void setupCanvas() {
-        canvas = new Canvas();
-        canvas.setWidth(814);
-        canvas.setHeight(436);
-        canvas.setOnMousePressed(this::updateInitialPosition);
-        canvas.setOnMouseDragged(this::updateStroke);
-        try {
-            canvas.setOnMouseReleased(this::releaseTool);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        gc = canvas.getGraphicsContext2D();
-    }
-
-    private void updateCanvas(MouseInfo mi) {
-        for (double[] pos: mi.getLines()) {
-            draw(pos[0],pos[1],pos[2],pos[3],mi.getCt(),mi.getCc());
-        }
     }
 
     private void setupChooseWord(int playerID) {
@@ -323,7 +316,7 @@ public class GameController {
             try {
                 String tmp = ((Button) actionEvent.getSource()).getText();
                 // Send WordChosen
-                lobby.put(RoomFlag.WORDCHOSEN,playerID,tmp);
+                lobby.put(RoomFlag.WORDCHOSEN, playerID, tmp);
                 currentWordLabel.setText(tmp);
                 canvasPaneRoot.getChildren().clear();
             } catch (InterruptedException e) {
@@ -338,18 +331,10 @@ public class GameController {
         canvasPaneRoot.getChildren().add(chooseWordPane);
     }
 
-    private void draw(double x1, double y1, double x2, double y2, CanvasTool ct, CanvasColor cc) {
-        gc.setStroke(ColorMap.getColor(cc));
-        switch (ct){
-            case PENCIL:
-                gc.strokeLine(x1,y1,x2,y2);
-                break;
-        }
-    }
-
     private void updateChat(TextInfo textInfo) {
-        if(chatTextFlow.getChildren().size()>15){
-            chatTextFlow.getChildren().remove(0,2);
+        // Removes old chat messages when a total of 15 are reached.
+        if (chatTextFlow.getChildren().size() > 15) {
+            chatTextFlow.getChildren().remove(0, 2);
             chatScrollPane.setVvalue(1.0d);
         }
         chatTextFlow.getChildren().add(textInfo.getText());
@@ -357,15 +342,66 @@ public class GameController {
         chatScrollPane.setVvalue(1.0d);
     }
 
+    private void addNewPlayers(User[] data) {
+        users.clear();
+        users.addAll(data);
+    }
+
     private void removePlayer(User user) {
         users.remove(user);
+    }
+
+    // Click event for the quit button. Closes application and start it anew.
+    @FXML
+    void quit(ActionEvent event) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader();
+        fxmlLoader.setLocation(getClass().getResource("/start.fxml"));
+        fxmlLoader.setController(new StartController());
+        ((Stage) canvasPaneRoot.getScene().getWindow()).setScene(new Scene(fxmlLoader.load()));
+        gut.cancel();
+    }
+
+    /*
+     *
+     *   The remaining methods are used to update the canvas and set it up when prompted.
+     *   It also keeps track of mouse positions and puts it in the lobby when the player finished a stroke
+     *
+     */
+
+    private void setupCanvas() {
+        canvas = new Canvas();
+        canvas.setWidth(814);
+        canvas.setHeight(436);
+        canvas.setOnMousePressed(this::updateInitialPosition);
+        canvas.setOnMouseDragged(this::updateStroke);
+        try {
+            canvas.setOnMouseReleased(this::releaseTool);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        gc = canvas.getGraphicsContext2D();
+    }
+
+    private void updateCanvas(MouseInfo mi) {
+        for (double[] pos : mi.getLines()) {
+            draw(pos[0], pos[1], pos[2], pos[3], mi.getCt(), mi.getCc());
+        }
+    }
+
+    private void draw(double x1, double y1, double x2, double y2, CanvasTool ct, CanvasColor cc) {
+        gc.setStroke(ColorMap.getColor(cc));
+        switch (ct) {
+            case PENCIL:
+                gc.strokeLine(x1, y1, x2, y2);
+                break;
+        }
     }
 
     @FXML
     void releaseTool(MouseEvent event) {
         dragging = false;
         try {
-            lobby.put(RoomFlag.CANVAS,playerID,mouseInfo);
+            lobby.put(RoomFlag.CANVAS, playerID, mouseInfo); // put mouseInfo so other clients can update ui
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -374,7 +410,7 @@ public class GameController {
     @FXML
     void updateInitialPosition(MouseEvent event) {
         if (myTurn) {
-            mouseInfo = new MouseInfo(CanvasTool.PENCIL,CanvasColor.valueOf(colorComboBox.getValue().toString()));
+            mouseInfo = new MouseInfo(CanvasTool.PENCIL, CanvasColor.valueOf(colorComboBox.getValue().toString()));
             prevX = event.getX();
             prevY = event.getY();
             dragging = true;
@@ -383,30 +419,22 @@ public class GameController {
 
     @FXML
     void updateStroke(MouseEvent event) {
-        if (!dragging){
+        if (!dragging) {
             return;
         }
         double x = event.getX();
         double y = event.getY();
-        if (Math.abs(x-prevX)<3&&Math.abs(y-prevY)<3){
+        // This is responsible for only making strokes between every third pixel in both x and y direction.
+        // Made to limit the amount of data parsed on.
+        if (Math.abs(x - prevX) < 3 && Math.abs(y - prevY) < 3) {
             return;
         }
-        // TODO: Maybe do some chunking, if more disappears under transport
 
         gc.setStroke(ColorMap.getColor(mouseInfo.getCc()));
-        gc.strokeLine(prevX,prevY,event.getX(),event.getY());
-        mouseInfo.addLine(prevX,prevY,event.getX(),event.getY());
+        gc.strokeLine(prevX, prevY, event.getX(), event.getY());
+        mouseInfo.addLine(prevX, prevY, event.getX(), event.getY());
         prevX = event.getX();
         prevY = event.getY();
-    }
-
-    @FXML
-    void quit(ActionEvent event) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader();
-        fxmlLoader.setLocation(getClass().getResource("/start.fxml"));
-        fxmlLoader.setController(new StartController());
-        ((Stage)canvasPaneRoot.getScene().getWindow()).setScene(new Scene(fxmlLoader.load()));
-        gut.cancel();
     }
 
 }
