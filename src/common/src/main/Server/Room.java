@@ -1,6 +1,7 @@
 package common.src.main.Server;
 
 import common.src.main.DataTransfer.TextInfo;
+import common.src.main.Enum.Broadcast;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
 import common.src.main.Enum.ServerFlag;
@@ -22,6 +23,7 @@ public class Room implements Runnable {
     protected SpaceRepository repo;
     protected Space serverSpace;
     protected Space lobby;
+    protected Space broadcast;
 
     protected String roomName;
     protected String currentWord = ""; //The word which is being drawn
@@ -49,7 +51,7 @@ public class Room implements Runnable {
     //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
     // projection 7 (only created if branch == then is taken)
-    public Room(SpaceRepository repo, String roomName, Space serverSpace) throws InterruptedException {
+    public Room(SpaceRepository repo, String roomName, Space serverSpace) {
         this.repo = repo;
         this.roomName = roomName;
         this.serverSpace = serverSpace;
@@ -59,6 +61,7 @@ public class Room implements Runnable {
                 new FormalField(RoomFlag.class),
                 new FormalField(Integer.class),
                 new FormalField(Object.class));
+        broadcast = new SequentialSpace();
     }
 
     @Override
@@ -70,6 +73,9 @@ public class Room implements Runnable {
 
             // Create instance of a Timer for later use
             turnTimer = new Timer();
+
+            // Creating broadcaster
+            new Thread(new Broadcaster(broadcast)).start();
 
             while (true) {
 
@@ -85,7 +91,7 @@ public class Room implements Runnable {
 
                         // Broadcast all users to users.
                         User[] userstmp = new User[users.size()];
-                        broadcastToInboxes(RoomResponseFlag.NEWPLAYER, users.toArray(userstmp));
+                        broadcast.put(Broadcast.ALL,RoomResponseFlag.NEWPLAYER, users.toArray(userstmp),0);
                         break;
 
                     case DISCONNECTED:
@@ -99,10 +105,10 @@ public class Room implements Runnable {
                         if (closingCheck()) return;
 
                         // Broadcast that player left to other players.
-                        broadcastToInboxes(RoomResponseFlag.PLAYERREMOVED, data);
+                        broadcast.put(Broadcast.ALL,RoomResponseFlag.PLAYERREMOVED, data,0);
                         break;
                     case CANVAS:
-                        broadcastExcept(RoomResponseFlag.CANVAS, data, playerID);
+                        broadcast.put(Broadcast.EXCEPT,RoomResponseFlag.CANVAS, data, playerID);
                         break;
                     case MESSAGE:
                         filterAndBroadcastMessage(playerID, data);
@@ -119,7 +125,7 @@ public class Room implements Runnable {
                         turnTime = gameOptions[1];
 
                         // UI and sync
-                        broadcastToInboxes(RoomResponseFlag.GAMESTART, gameOptions);
+                        broadcast.put(Broadcast.ALL,RoomResponseFlag.GAMESTART, gameOptions,0);
 
                         takeTurnTime = new takeTimeTask();
                         nextTurn();
@@ -134,7 +140,7 @@ public class Room implements Runnable {
                         turnTimer.schedule(takeTurnTime, 0, 1000);
 
                         // Let others know the
-                        broadcastToInboxes(RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()});
+                        broadcast.put(Broadcast.ALL,RoomResponseFlag.STARTTURN, new int[]{currentWord.length(), users.get(turnNumber).getId()},0);
                         break;
                     default:
                         // If an unknown flag is received nothing is done.
@@ -151,10 +157,10 @@ public class Room implements Runnable {
     }
 
     // This method handles all necessary logic for choosing the next player and stopping the game if needed.
-    private void nextTurn() {
+    private void nextTurn() throws InterruptedException {
         // Stop drawing for last player
         if (gameAFoot)
-            broadcastToOne(RoomResponseFlag.STOPDRAW, 0, users.get(turnNumber).getId()); // UI only
+            broadcast.put(Broadcast.ONE,RoomResponseFlag.STOPDRAW, 0, users.get(turnNumber).getId()); // UI only
 
         // Stopping timer
         System.out.println("Moving to next player...");
@@ -175,7 +181,7 @@ public class Room implements Runnable {
         if (users.size() - 1 == turnNumber) {
             numberOfRounds--;
             turnNumber = -1;
-            broadcastToInboxes(RoomResponseFlag.NEXTROUND, numberOfRounds); // UI only
+            broadcast.put(Broadcast.ALL,RoomResponseFlag.NEXTROUND, numberOfRounds,0); // UI only
         }
 
         // End game if totalTurns is reached
@@ -183,7 +189,7 @@ public class Room implements Runnable {
             gameAFoot = false;
             rankUsers();
             User[] userstmp = new User[users.size()];
-            broadcastToInboxes(RoomResponseFlag.ENDGAME, users.toArray(userstmp)); // Update UI at clients
+            broadcast.put(Broadcast.ALL,RoomResponseFlag.ENDGAME, users.toArray(userstmp),0); // Update UI at clients
             return;
         }
 
@@ -193,10 +199,10 @@ public class Room implements Runnable {
         amountOfTurns++;
         turnNumber++;
         String possibleWords[] = generateWords();
-        broadcastToOne(RoomResponseFlag.CHOOSEWORD, possibleWords, (users.get(turnNumber)).getId());
+        broadcast.put(Broadcast.ONE,RoomResponseFlag.CHOOSEWORD, possibleWords, (users.get(turnNumber)).getId());
     }
 
-    private void filterAndBroadcastMessage(int playerID, Object data) {
+    private void filterAndBroadcastMessage(int playerID, Object data) throws InterruptedException {
         boolean correct = filterMessage(data);
         if (gameAFoot && (playerID != users.get(turnNumber).getId()) && correct && !playerGuessed.get(playerID)) {
             // Calculate score for guesser and drawer
@@ -206,11 +212,11 @@ public class Room implements Runnable {
             playerAmountGuessed++;
             TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
             TextInfo textInfoSelf = createTextToSelf(data, playerNames.get(playerID));
-            broadcastExcept(RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
-            broadcastToOne(RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
+            broadcast.put(Broadcast.EXCEPT,RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
+            broadcast.put(Broadcast.ONE,RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
         } else if (!correct) {
             TextInfo textInfo = createText(data, playerNames.get(playerID));
-            broadcastToInboxes(RoomResponseFlag.MESSAGE, textInfo);
+            broadcast.put(Broadcast.ALL,RoomResponseFlag.MESSAGE, textInfo,0);
         }
     }
 
@@ -238,12 +244,12 @@ public class Room implements Runnable {
     }
 
     // Calculate scores if guessed correctly
-    private void calculateScore(int playerID) {
+    private void calculateScore(int playerID) throws InterruptedException {
         for (User u : users) {
             if (u.getId() == playerID) {
                 u.addScore(timeLeft * 10 + (currentWord.length() * 10));
                 users.get(turnNumber).addScore(100 + (currentWord.length() * 10));
-                broadcastToInboxes(RoomResponseFlag.ADDPOINTS, new User[]{u, users.get(turnNumber)});
+                broadcast.put(Broadcast.ALL,RoomResponseFlag.ADDPOINTS, new User[]{u, users.get(turnNumber)},0);
             }
         }
     }
@@ -287,44 +293,15 @@ public class Room implements Runnable {
         return WordUtil.generateWords();
     }
 
-
-    // Broadcast to the inbox of the given playerID.
-    private void broadcastToOne(RoomResponseFlag flag, Object data, int playerID) {
-        try {
-            (playerInboxes.get(playerID)).put(flag, data);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    // Broadcast to all inboxes except the one of the given playerID.
-    private void broadcastExcept(RoomResponseFlag flag, Object data, int playerID) {
-        try {
-            for (Map.Entry<Integer, Space> set : playerInboxes.entrySet()) {
-                if (set.getKey().equals(playerID)) continue;
-                set.getValue().put(flag, data);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Broadcast to all inboxes.
-    private void broadcastToInboxes(RoomResponseFlag flag, Object data) {
-        try {
-            for (Space inbox : playerInboxes.values()) {
-                inbox.put(flag, data);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     // Removes player from different lists/maps
     private void removePlayer(int playerID, User user) {
         String inboxName = createName(playerID);
         repo.remove(inboxName);
+
+        if(users.indexOf(user)<=turnNumber){
+            turnNumber--;
+        }
+
         users.remove(user);
         playerInboxes.remove(playerID);
         playerGuessed.remove(playerID);
@@ -359,17 +336,94 @@ public class Room implements Runnable {
     class takeTimeTask extends TimerTask {
         @Override
         public void run() {
-            if (Room.this.currentWord.equals("")) {
-                this.cancel();
-                return;
+            try {
+                if (Room.this.currentWord.equals("")) {
+                    this.cancel();
+                    return;
+                }
+                if (Room.this.timeLeft == 0) {
+                    nextTurn();
+                    this.cancel();
+                    return;
+                }
+
+                Room.this.timeLeft--;
+                broadcast.put(Broadcast.ALL,RoomResponseFlag.TIMETICK, Room.this.timeLeft,0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            if (Room.this.timeLeft == 0) {
-                nextTurn();
-                this.cancel();
-                return;
+        }
+    }
+
+    public class Broadcaster implements Runnable {
+
+        private HashMap<Integer, Space> playerInboxes = Room.this.playerInboxes;
+        private Space broadcasts;
+
+        public Broadcaster(Space broadcasts) {
+            this.broadcasts = broadcasts;
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Now ready to broadcast");
+            while (true) {
+                Object[] msg = new Object[0];
+                try {
+                    // TYPE - FLAG - DATA - ID
+                    msg = broadcasts.get(new FormalField(Broadcast.class),new FormalField(RoomResponseFlag.class),
+                            new FormalField(Object.class), new FormalField(Integer.class));
+                } catch (InterruptedException e) {e.printStackTrace();}
+
+                Broadcast type = (Broadcast) msg[0];
+                RoomResponseFlag flag = (RoomResponseFlag) msg[1];
+                Object data = msg[2];
+                int id = (int) msg[3];
+
+                System.out.println("Broadcasting to: "+type);
+                switch (type){
+                    case ALL: broadcastToAll(flag,data);break;
+                    case ONE: broadcastToOne(flag,data,id);
+                        System.out.println(id);break;
+                    case EXCEPT: broadcastExcept(flag,data,id);break;
+                }
+
+                System.out.println("broadcasted");
             }
-            broadcastToInboxes(RoomResponseFlag.TIMETICK, Room.this.timeLeft);
-            Room.this.timeLeft--;
+
+
+        }
+        // Broadcast to the inbox of the given playerID.
+        private void broadcastToOne(RoomResponseFlag flag, Object data, int playerID) {
+            try {
+                (playerInboxes.get(playerID)).put(flag, data);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        // Broadcast to all inboxes except the one of the given playerID.
+        private void broadcastExcept(RoomResponseFlag flag, Object data, int playerID) {
+            try {
+                for (Map.Entry<Integer, Space> set : playerInboxes.entrySet()) {
+                    if (set.getKey().equals(playerID)) continue;
+                    set.getValue().put(flag, data);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Broadcast to all inboxes.
+        private void broadcastToAll(RoomResponseFlag flag, Object data) {
+            try {
+                for (Space inbox : playerInboxes.values()) {
+                    inbox.put(flag, data);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

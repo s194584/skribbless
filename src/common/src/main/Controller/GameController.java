@@ -199,7 +199,7 @@ public class GameController {
             case GAMESTART: // Set initial data and wait for either chooseword or startturn
                 int[] gameInfo = (int[]) data;
                 roundsLeftLabel.setText("" + gameInfo[0]);
-                timeLabel.setText(gameInfo[1] + " s");
+                timeLabel.setText(gameInfo[1] + "s");
                 if (isLeader.getValue()) {
                     canvasPaneRoot.getChildren().clear();
                 }
@@ -213,6 +213,9 @@ public class GameController {
                 myTurn = wordAndId[1] == playerID;
                 if (!myTurn) {
                     currentWordLabel.setText("_ ".repeat(wordAndId[0]));
+                    canvas.setMouseTransparent(true);
+                }else{
+                    canvas.setMouseTransparent(false);
                 }
                 // Show whose turn it is
                 userListView.getSelectionModel().select(new User("", "", wordAndId[1], 0));
@@ -233,6 +236,8 @@ public class GameController {
                 break;
             case STOPDRAW: // disable more drawing inputs from the user
                 myTurn = false;
+                canvas.setMouseTransparent(true);
+
                 break;
             case ENDGAME: // Display end screen
                 User[] rankedUsers = (User[]) data;
@@ -399,22 +404,24 @@ public class GameController {
 
     @FXML
     void releaseTool(MouseEvent event) {
-        dragging = false;
-        try {
-            lobby.put(RoomFlag.CANVAS, playerID, mouseInfo); // put mouseInfo so other clients can update ui
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        // myTurn used to block strokes that start before STOPDRAW is received and stops after
+        if (myTurn) {
+            dragging = false;
+            try {
+                lobby.put(RoomFlag.CANVAS, playerID, mouseInfo); // put mouseInfo so other clients can update ui
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
     @FXML
     void updateInitialPosition(MouseEvent event) {
-        if (myTurn) {
             mouseInfo = new MouseInfo(CanvasTool.PENCIL, CanvasColor.valueOf(colorComboBox.getValue().toString()));
             prevX = event.getX();
             prevY = event.getY();
             dragging = true;
-        }
     }
 
     @FXML

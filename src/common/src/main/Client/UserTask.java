@@ -13,7 +13,7 @@ import common.src.main.Enum.*;
 import org.jspace.Space;
 
 /**
- * The initial task responsible for communicating with the Server and CreationHandler upon launch, and communing
+ * The initial task responsible for communicating with the Server and CreationHandler upon launch, and communicating
  * changes to the StartController through bindings.
  * It is implemented in accordance with the protocol described in the report.
  */
