@@ -379,8 +379,7 @@ public class Room implements Runnable {
 
                 switch (type){
                     case ALL: broadcastToAll(flag,data);break;
-                    case ONE: broadcastToOne(flag,data,id);
-                        System.out.println(id);break;
+                    case ONE: broadcastToOne(flag,data,id);break;
                     case EXCEPT: broadcastExcept(flag,data,id);break;
                 }
             }

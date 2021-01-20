@@ -57,6 +57,7 @@ public class GameUserTask extends Task {
                 return -1;
             }
             updateValue(inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class)));
+            Thread.sleep(10); //Ensure updateValue does not overwrite.
         }
     }
 
