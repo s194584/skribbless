@@ -12,7 +12,7 @@
    <children>
       <VBox fx:id="startPane" alignment="CENTER" spacing="6.0">
          <children>
-            <Label fx:id="label1" text="Label" textAlignment="CENTER" />
+            <Label fx:id="label1" text="status" textAlignment="CENTER" />
             <TextField fx:id="ipTextField" alignment="CENTER" promptText="Enter IP" text="localhost:9001" />
             <TextField fx:id="nameTextField" alignment="CENTER" promptText="Enter Name" />
             <TextField fx:id="roomNameTextField" alignment="CENTER" promptText="Enter Room Name" />

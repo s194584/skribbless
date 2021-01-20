@@ -10,6 +10,6 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="JAVAFX11" level="project" />
   </component>
 </module>

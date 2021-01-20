@@ -124,40 +124,40 @@ class CreationHandler implements Runnable {
         System.out.println(cToU);
 
         try {
-            // projection 7
+            // Projection 7
             System.out.println("proj7");
             message = space.get(uToC, new FormalField(ServerFlag.class), new FormalField(String.class));
-            // projection 8
+            // Projection 8
             System.out.println("proj8");
             if (message[1] == ServerFlag.HOST) {
                 space.put(cToU, "then");
-                // projection 9
+                // Projection 9
                 System.out.println("proj9");
                 space.put(ServerFlag.GENERATEROOM, "");
-                // projection 10
+                // Projection 10
                 System.out.println("proj10");
                 message = space.get(new ActualField(ServerResponseFlag.GENERATEDROOM), new FormalField(String.class));
-                // projection 11
+                // Projection 11
                 System.out.println("proj11");
                 createRoom((String) message[1]);
-                // projection 12
+                // Projection 12
                 System.out.println("proj12");
                 space.get(new ActualField(message[1]), new FormalField(ServerFlag.class));
-                // projection 13
+                // Projection 13
                 System.out.println("proj13");
                 space.put(ServerFlag.SETROOM, message[1]);
-                // projection 15
+                // Projection 15
                 System.out.println("proj15");
                 space.put(cToU, true, message[1]);
             } else {
                 space.put(cToU, "else");
-                // projection 16
+                // Projection 16
                 System.out.println("proj16");
                 space.put(ServerFlag.CHECKROOM, message[2]);
-                // projection 17
+                // Projection 17
                 System.out.println("proj17");
                 Object[] serverResponse = space.get(new ActualField(message[2]), new FormalField(Boolean.class));
-                // projection 18
+                // Projection 18
                 space.put(cToU, serverResponse[1], serverResponse[0]);
                 System.out.println("proj18");
             }

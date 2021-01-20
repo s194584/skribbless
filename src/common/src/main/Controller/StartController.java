@@ -47,22 +47,25 @@ public class StartController {
     public void initialize() {
         UserTask userTask = new UserTask(ui);
         ssp.bind(userTask.messageProperty());
-        ssp.addListener(new ChangeListener<String>() {
+        ssp.addListener(new ChangeListener<>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String tOld, String tNew) {
-                switch(tNew){
+                switch (tNew) {
                     case "CONNECTED":
+                        // Load game screen
                         label1.setText(tNew);
+                        FXMLLoader fxmlLoader = new FXMLLoader();
+                        fxmlLoader.setLocation(getClass().getResource("/game.fxml"));
+                        fxmlLoader.setController(new GameController(root, userTask.getTaskInfo()));
                         try {
-                            FXMLLoader fxmlLoader = new FXMLLoader();
-                            fxmlLoader.setLocation(getClass().getResource("/game.fxml"));
-                            fxmlLoader.setController(new GameController(root,userTask.getTaskInfo()));
                             fxmlLoader.load();
-                            userTask.cancel();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        } catch (IOException ignored) {
                         }
+                        // Cancel UserTask
+                        userTask.cancel();
+                        break;
                     case "NOTCONNECTED":
+                        // Update status
                         label1.setText(tNew);
                         break;
                 }

@@ -24,22 +24,25 @@ public class Room implements Runnable {
     protected Space serverSpace;
     protected Space lobby;
     protected Space broadcast;
+    protected Template receiveTemplate; // The template used for receiving messages
 
+    // Room information
     protected String roomName;
     protected String currentWord = ""; //The word which is being drawn
     protected int numberOfRounds; //UI only
     protected int turnNumber = -1;
+    protected int playerAmount = 0;
+    protected int playerAmountGuessed = 0; // How many players guessed the word
+
     // Keeps track of when to end the game.
     protected int totalTurns;
     protected int amountOfTurns = 0;
 
-    protected int playerAmount = 0;
-    protected int playerAmountGuessed = 0; // How many players guessed the word
+    // Players' information
     protected ArrayList<User> users = new ArrayList<>();
     protected HashMap<Integer, Space> playerInboxes = new HashMap<>();
     protected HashMap<Integer, String> playerNames = new HashMap<>(); //This is used for messages in the chat.
     protected HashMap<Integer, Boolean> playerGuessed = new HashMap<>();
-    protected Template receiveTemplate; // The template used for receiving messages
 
     // Timer
     protected int turnTime;
@@ -47,8 +50,6 @@ public class Room implements Runnable {
     Timer turnTimer;
     TimerTask takeTurnTime;
     private boolean gameAFoot = false;
-
-    //TODO: Some amount of characters to let players differentiate each other (in-case of the same name)
 
     // projection 7 (only created if branch == then is taken)
     public Room(SpaceRepository repo, String roomName, Space serverSpace) {
@@ -84,7 +85,6 @@ public class Room implements Runnable {
                 int playerID = (int) message[1];
                 Object data = message[2];
 
-                System.out.println(roomName + " got message: " + message[0]);
                 switch ((RoomFlag) message[0]) {
                     case CONNECTED:
                         connected(playerID, (User) data);
@@ -93,7 +93,6 @@ public class Room implements Runnable {
                         User[] userstmp = new User[users.size()];
                         broadcast.put(Broadcast.ALL,RoomResponseFlag.NEWPLAYER, users.toArray(userstmp),0);
                         break;
-
                     case DISCONNECTED:
                         // Remove inbox from list and repo.
                         System.out.println("User disconnected");
@@ -129,7 +128,6 @@ public class Room implements Runnable {
 
                         takeTurnTime = new takeTimeTask();
                         nextTurn();
-
                         break;
                     case WORDCHOSEN:
                         // Set up different fields
@@ -146,11 +144,7 @@ public class Room implements Runnable {
                         // If an unknown flag is received nothing is done.
                         break;
                 }
-
-
             }
-
-
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -168,7 +162,6 @@ public class Room implements Runnable {
         // Reset guesses
         for (Integer k : playerGuessed.keySet()) {
             playerGuessed.put(k, false);
-
         }
         playerAmountGuessed = 0;
 
@@ -193,7 +186,6 @@ public class Room implements Runnable {
             return;
         }
 
-
         // Prompts the next player with word choice
         // And updates variables
         amountOfTurns++;
@@ -207,14 +199,18 @@ public class Room implements Runnable {
         if (gameAFoot && (playerID != users.get(turnNumber).getId()) && correct && !playerGuessed.get(playerID)) {
             // Calculate score for guesser and drawer
             calculateScore(playerID);
-
+            // Save the player's guess as correct
             playerGuessed.put(playerID, true);
             playerAmountGuessed++;
+            // Text to others
             TextInfo textInfoOthers = createTextToOthers(data, playerNames.get(playerID));
+            // Text to itself
             TextInfo textInfoSelf = createTextToSelf(data, playerNames.get(playerID));
+            // Broadcasting the texts
             broadcast.put(Broadcast.EXCEPT,RoomResponseFlag.MESSAGE, textInfoOthers, playerID);
             broadcast.put(Broadcast.ONE,RoomResponseFlag.MESSAGE, textInfoSelf, playerID);
         } else if (!correct) {
+            // Text to all
             TextInfo textInfo = createText(data, playerNames.get(playerID));
             broadcast.put(Broadcast.ALL,RoomResponseFlag.MESSAGE, textInfo,0);
         }
@@ -328,25 +324,25 @@ public class Room implements Runnable {
         return roomName + "-" + playerID;
     }
 
-    public Space getLobby() {
-        return lobby;
-    }
-
-    // The timer thread
+    /**
+     * This class extends TimerTask to use custom actions when executed by a Timer.
+     */
     class takeTimeTask extends TimerTask {
         @Override
         public void run() {
             try {
+                // ChosenWord has been cleared
                 if (Room.this.currentWord.equals("")) {
                     this.cancel();
                     return;
                 }
+                // Time ran out
                 if (Room.this.timeLeft == 0) {
                     nextTurn();
                     this.cancel();
                     return;
                 }
-
+                // Send a time tick
                 Room.this.timeLeft--;
                 broadcast.put(Broadcast.ALL,RoomResponseFlag.TIMETICK, Room.this.timeLeft,0);
             } catch (InterruptedException e) {
@@ -355,7 +351,12 @@ public class Room implements Runnable {
         }
     }
 
-    public class Broadcaster implements Runnable {
+    /**
+     * The Broadcaster will broadcast anything that comes into the tuple space broadcast,
+     * as long as the tuple has the form:
+     * Broadcast - RoomResponseFlag - Object - Integer
+     */
+    class Broadcaster implements Runnable {
 
         private HashMap<Integer, Space> playerInboxes = Room.this.playerInboxes;
         private Space broadcasts;
@@ -366,11 +367,9 @@ public class Room implements Runnable {
 
         @Override
         public void run() {
-            System.out.println("Now ready to broadcast");
             while (true) {
                 Object[] msg = new Object[0];
                 try {
-                    // TYPE - FLAG - DATA - ID
                     msg = broadcasts.get(new FormalField(Broadcast.class),new FormalField(RoomResponseFlag.class),
                             new FormalField(Object.class), new FormalField(Integer.class));
                 } catch (InterruptedException e) {e.printStackTrace();}
@@ -380,15 +379,12 @@ public class Room implements Runnable {
                 Object data = msg[2];
                 int id = (int) msg[3];
 
-                System.out.println("Broadcasting to: "+type);
                 switch (type){
                     case ALL: broadcastToAll(flag,data);break;
                     case ONE: broadcastToOne(flag,data,id);
                         System.out.println(id);break;
                     case EXCEPT: broadcastExcept(flag,data,id);break;
                 }
-
-                System.out.println("broadcasted");
             }
 
 
