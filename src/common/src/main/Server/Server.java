@@ -125,41 +125,30 @@ class CreationHandler implements Runnable {
 
         try {
             // Projection 7
-            System.out.println("proj7");
             message = space.get(uToC, new FormalField(ServerFlag.class), new FormalField(String.class));
             // Projection 8
-            System.out.println("proj8");
             if (message[1] == ServerFlag.HOST) {
                 space.put(cToU, "then");
                 // Projection 9
-                System.out.println("proj9");
                 space.put(ServerFlag.GENERATEROOM, "");
                 // Projection 10
-                System.out.println("proj10");
                 message = space.get(new ActualField(ServerResponseFlag.GENERATEDROOM), new FormalField(String.class));
                 // Projection 11
-                System.out.println("proj11");
                 createRoom((String) message[1]);
                 // Projection 12
-                System.out.println("proj12");
                 space.get(new ActualField(message[1]), new FormalField(ServerFlag.class));
                 // Projection 13
-                System.out.println("proj13");
                 space.put(ServerFlag.SETROOM, message[1]);
                 // Projection 15
-                System.out.println("proj15");
                 space.put(cToU, true, message[1]);
             } else {
                 space.put(cToU, "else");
                 // Projection 16
-                System.out.println("proj16");
                 space.put(ServerFlag.CHECKROOM, message[2]);
                 // Projection 17
-                System.out.println("proj17");
                 Object[] serverResponse = space.get(new ActualField(message[2]), new FormalField(Boolean.class));
                 // Projection 18
                 space.put(cToU, serverResponse[1], serverResponse[0]);
-                System.out.println("proj18");
             }
 
         } catch (InterruptedException e) {

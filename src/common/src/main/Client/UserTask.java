@@ -55,60 +55,41 @@ public class UserTask extends Task {
             Object[] response;
 
             // Projection 1
-            System.out.println("proj1");
             connect();
             // Projection 2
             if (isConnected()) {
-                System.out.println("proj2then");
                 // Projection 3
-                System.out.println("proj3");
                 serverSpace.put(ServerFlag.CONNECTED, "");
                 // Projection 4
-                System.out.println("proj4");
                 id = (int) serverSpace.get(new FormalField(Integer.class))[0];
-                System.out.println("Client got id: " + id);
 
                 // Shorthand
                 ActualField cToU = new ActualField("creation" + id + "user");
                 String uToC = "user" + id + "creation";
 
                 // Projection 7
-                System.out.println("proj7");
                 serverSpace.put(uToC, action, roomName);
                 // Projection 8
-                System.out.println("proj8");
                 String branch = (String) serverSpace.get(cToU, new FormalField(String.class))[1];
-                System.out.println("Client branches: " + branch);
                 if (branch.equals("then")) {
                     // Projection 15
-                    System.out.println("proj15");
                     response = serverSpace.get(cToU, new FormalField(Boolean.class), new FormalField(String.class));
                 } else {
                     // Projection 18
-                    System.out.println("proj18");
                     response = serverSpace.get(cToU, new FormalField(Boolean.class), new FormalField(String.class));
                 }
                 // Projection 19
-                System.out.println("proj19");
                 if ((Boolean) response[1]) {
-                    System.out.println("proj19then");
                     // Projection 20
-                    System.out.println("proj20");
                     connectToRoom((String) response[2]);
                     // Projection 21
-                    System.out.println("proj21");
                     connected();
                 } else {
-                    System.out.println("proj19else");
                     // Projection 22
-                    System.out.println("proj22");
                     notConnected();
                 }
-
             } else {
-                System.out.println("proj2else");
                 // Projection 23
-                System.out.println("proj23");
                 notConnected();
             }
         }
