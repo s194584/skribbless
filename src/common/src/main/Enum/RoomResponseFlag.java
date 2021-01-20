@@ -16,5 +16,6 @@ public enum RoomResponseFlag {
     NEXTROUND,
     ENDGAME,
     STOPDRAW,
-    ADDPOINTS
+    ADDPOINTS,
+    NULL
 }

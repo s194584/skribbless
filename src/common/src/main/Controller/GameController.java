@@ -246,6 +246,10 @@ public class GameController {
                 users.addAll(rankedUsers);
                 setupGameOver();
                 break;
+            case NULL:
+                // Update window title to room's name
+                ((Stage) canvasPaneRoot.getScene().getWindow()).setTitle(data.toString());
+                break;
             default:
                 break;
         }

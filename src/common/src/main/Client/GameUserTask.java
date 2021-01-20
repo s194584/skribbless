@@ -4,6 +4,7 @@ import common.src.main.DataTransfer.TaskInfo;
 import common.src.main.DataTransfer.User;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
@@ -39,6 +40,9 @@ public class GameUserTask extends Task {
         System.out.println("Got response from room:" + roomResponse[1] + " isleader: " + roomResponse[2]);
         inbox = new RemoteSpace(makeUri(roomResponse[1].toString()));
         this.isLeader = (boolean) roomResponse[2];
+        int div = roomResponse[1].toString().indexOf("-");
+        Object[] roomName = {RoomResponseFlag.NULL,roomResponse[1].toString().substring(0,div)};
+        updateValue(roomName);
 
         // Send isLeader to GameController
         updateMessage("" + isLeader);
