@@ -98,8 +98,6 @@ public class Room implements Runnable {
                         System.out.println("User disconnected");
                         removePlayer(playerID, (User) data);
 
-                        //TODO: Select new leader if leader left.
-
                         // Check if room-thread should close
                         if (closingCheck()) return;
 
