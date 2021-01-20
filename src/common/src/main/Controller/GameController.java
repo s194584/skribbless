@@ -155,7 +155,6 @@ public class GameController {
                 if (keyEvent.getCode().equals(KeyCode.ENTER) && !chatTextField.getText().isEmpty()) {
                     // Broadcast any messages that is not an empty string.
                     lobby.put(RoomFlag.MESSAGE, playerID, chatTextField.getText());
-                    System.out.println("GameController put: " + chatTextField.getText());
                     chatTextField.setText("");
                 }
             } catch (InterruptedException e) {
@@ -163,7 +162,7 @@ public class GameController {
             }
         });
 
-        // Initialize GameUserTask thread.
+        // Start GameUserTask thread.
         Thread th = new Thread(gut);
         th.setDaemon(true);
         th.start();
@@ -174,7 +173,6 @@ public class GameController {
         Object[] message = (Object[]) newValue;
         RoomResponseFlag flag = (RoomResponseFlag) message[0];
         Object data = message[1];
-        System.out.println("GameController got flag: " + flag);
 
         switch (flag) {
             case NEWPLAYER: // Add player and potentially start gameOptions
@@ -246,7 +244,7 @@ public class GameController {
                 users.addAll(rankedUsers);
                 setupGameOver();
                 break;
-            case NULL:
+            case ROOMNAME:
                 // Update window title to room's name
                 ((Stage) canvasPaneRoot.getScene().getWindow()).setTitle(data.toString());
                 break;
@@ -259,8 +257,8 @@ public class GameController {
     private void isLeaderBinding(Object observableValue, Object oldValue, Object newValue) {
         isLeader.set(newValue.equals("" + true));
         if (!gameStarted && isLeader.getValue()) {
-            System.out.println("GameController setting gameOptions");
 
+            // Loading GameOptions pane
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gameOptions.fxml"));
             gameOpCon = new GameOptionsController();
             fxmlLoader.setController(gameOpCon);
@@ -271,7 +269,7 @@ public class GameController {
                 e.printStackTrace();
             }
 
-            // GAMESTART button
+            // GAMESTART button setup
             gameOpCon.startGameButton.setDisable(true);
             gameOpCon.startGameButton.setOnAction(actionEvent -> {
                 try {
@@ -304,7 +302,6 @@ public class GameController {
         ranksListView.setItems(users);
         ranksListView.setMouseTransparent(true);
         gameOverScrollPane.setContent(ranksListView);
-
         canvasPaneRoot.getChildren().clear();
         canvasPaneRoot.getChildren().add(gameOverScrollPane);
     }
@@ -342,7 +339,7 @@ public class GameController {
 
     private void updateChat(TextInfo textInfo) {
         // Removes old chat messages when a total of 15 are reached.
-        if (chatTextFlow.getChildren().size() > 15) {
+        if (chatTextFlow.getChildren().size() > 30) {
             chatTextFlow.getChildren().remove(0, 2);
             chatScrollPane.setVvalue(1.0d);
         }
@@ -383,11 +380,7 @@ public class GameController {
         canvas.setHeight(436);
         canvas.setOnMousePressed(this::updateInitialPosition);
         canvas.setOnMouseDragged(this::updateStroke);
-        try {
-            canvas.setOnMouseReleased(this::releaseTool);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        canvas.setOnMouseReleased(this::releaseTool);
         gc = canvas.getGraphicsContext2D();
     }
 
@@ -435,15 +428,18 @@ public class GameController {
         }
         double x = event.getX();
         double y = event.getY();
+
         // This is responsible for only making strokes between every third pixel in both x and y direction.
         // Made to limit the amount of data parsed on.
         if (Math.abs(x - prevX) < 3 && Math.abs(y - prevY) < 3) {
             return;
         }
-
+        // Drawing on own canvas
         gc.setStroke(ColorMap.getColor(mouseInfo.getCc()));
         gc.strokeLine(prevX, prevY, event.getX(), event.getY());
+        // Packaging the stroke
         mouseInfo.addLine(prevX, prevY, event.getX(), event.getY());
+
         prevX = event.getX();
         prevY = event.getY();
     }

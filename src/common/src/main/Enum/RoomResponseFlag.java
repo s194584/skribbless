@@ -17,5 +17,5 @@ public enum RoomResponseFlag {
     ENDGAME,
     STOPDRAW,
     ADDPOINTS,
-    NULL
+    ROOMNAME
 }

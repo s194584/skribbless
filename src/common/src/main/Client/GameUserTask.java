@@ -4,7 +4,6 @@ import common.src.main.DataTransfer.TaskInfo;
 import common.src.main.DataTransfer.User;
 import common.src.main.Enum.RoomFlag;
 import common.src.main.Enum.RoomResponseFlag;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
@@ -35,13 +34,18 @@ public class GameUserTask extends Task {
 
     @Override
     protected Integer call() throws Exception {
+        // Connect to room
         lobby.put(RoomFlag.CONNECTED, userId, user);
         Object[] roomResponse = lobby.get(new ActualField(userId), new FormalField(String.class), new FormalField(Boolean.class));
-        System.out.println("Got response from room:" + roomResponse[1] + " isleader: " + roomResponse[2]);
+        // Link the inbox
         inbox = new RemoteSpace(makeUri(roomResponse[1].toString()));
+
+        // Set leader status
         this.isLeader = (boolean) roomResponse[2];
+
+        // Send the room name to controller
         int div = roomResponse[1].toString().indexOf("-");
-        Object[] roomName = {RoomResponseFlag.NULL,roomResponse[1].toString().substring(0,div)};
+        Object[] roomName = {RoomResponseFlag.ROOMNAME,roomResponse[1].toString().substring(0,div)};
         updateValue(roomName);
 
         // Send isLeader to GameController
@@ -52,12 +56,7 @@ public class GameUserTask extends Task {
             if (isCancelled()) {
                 return -1;
             }
-
-            Object[] message = inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class));
-            if (message[0] == RoomResponseFlag.STARTTURN) {
-                System.out.println(message[1]);
-            }
-            updateValue(message);
+            updateValue(inbox.get(new FormalField(RoomResponseFlag.class), new FormalField(Object.class)));
         }
     }
 
