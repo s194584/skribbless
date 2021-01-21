@@ -112,6 +112,8 @@ public class Room implements Runnable {
 
                         // Reset guesses when all have guessed the word
                         if (gameAFoot && playerAmountGuessed == playerAmount - 1) {
+                            // Clearing ChosenWord
+                            currentWord = "";
                             nextTurn();
                         }
                         break;
@@ -162,11 +164,6 @@ public class Room implements Runnable {
             playerGuessed.put(k, false);
         }
         playerAmountGuessed = 0;
-
-        // Clearing ChosenWord
-        // We use an empty string since the Users are prevented from sending empty strings,
-        // and thus the room should never receive empty words
-        currentWord = "";
 
         // Allows turns
         if (users.size() - 1 == turnNumber) {
@@ -336,6 +333,11 @@ public class Room implements Runnable {
                 }
                 // Time ran out
                 if (Room.this.timeLeft == 0) {
+                    // Clearing ChosenWord
+                    // We use an empty string since the Users are prevented from sending empty strings,
+                    // and thus the room should never receive empty Strings.
+                    currentWord = "";
+
                     nextTurn();
                     this.cancel();
                     return;
