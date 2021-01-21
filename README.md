@@ -23,7 +23,7 @@ Now in the path it is important that it leads to the lib folder in the SDK. Mean
 ```bash
 --module-path C:/opt/javafx/javafx-sdk-11.0.2/lib --add-modules javafx.controls,javafx.fxml 
 ```
-Remember if the path contains spaces use ${PATH_TO_JAVAFX_HERE} instead.
+Remember if the path contains spaces use ${PATH_TO_JAVAFX_HERE} instead or wrap in quotation marks ("").
 
 ## Authors
 This project is made by Malthe Ørberg Pedersen and Thor Eric Dueholm.
